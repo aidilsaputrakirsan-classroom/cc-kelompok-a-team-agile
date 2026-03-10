@@ -20,7 +20,7 @@ cd backend
 
 if [ ! -d "venv" ]; then
     echo "[INFO] Membuat virtual environment..."
-    py -3.11 -m venv venv
+    py -3 -m venv venv
 else
     echo "[OK] Virtual environment sudah ada, dilewati."
 fi
