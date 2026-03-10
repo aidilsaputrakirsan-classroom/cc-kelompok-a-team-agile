@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Header from "./components/Header";
 import SearchBar from "./components/SearchBar";
 import ItemForm from "./components/ItemForm";
@@ -19,6 +19,7 @@ function App() {
   const [isConnected, setIsConnected] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("newest"); // "name" | "price" | "newest"
 
   // ==================== LOAD DATA ====================
   const loadItems = useCallback(async (search = "") => {
@@ -84,6 +85,22 @@ function App() {
     setEditingItem(null);
   };
 
+  // ==================== SORTING ====================
+  const sortedItems = useMemo(() => {
+    const sorted = [...items];
+    switch (sortBy) {
+      case "name":
+        return sorted.sort((a, b) => a.name.localeCompare(b.name));
+      case "price":
+        return sorted.sort((a, b) => a.price - b.price);
+      case "newest":
+      default:
+        return sorted.sort(
+          (a, b) => new Date(b.created_at) - new Date(a.created_at),
+        );
+    }
+  }, [items, sortBy]);
+
   // ==================== RENDER ====================
   return (
     <div style={styles.app}>
@@ -95,8 +112,23 @@ function App() {
           onCancelEdit={handleCancelEdit}
         />
         <SearchBar onSearch={handleSearch} />
+
+        {/* Sorting Dropdown */}
+        <div style={styles.sortContainer}>
+          <label style={styles.sortLabel}>Urutkan berdasarkan:</label>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            style={styles.sortSelect}
+          >
+            <option value="newest">Terbaru</option>
+            <option value="name">Nama (A-Z)</option>
+            <option value="price">Harga (Terendah)</option>
+          </select>
+        </div>
+
         <ItemList
-          items={items}
+          items={sortedItems}
           onEdit={handleEdit}
           onDelete={handleDelete}
           loading={loading}
@@ -116,6 +148,30 @@ const styles = {
   container: {
     maxWidth: "900px",
     margin: "0 auto",
+  },
+  sortContainer: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.75rem",
+    marginBottom: "1rem",
+    padding: "0.75rem 1rem",
+    backgroundColor: "#fff",
+    borderRadius: "8px",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+  },
+  sortLabel: {
+    fontSize: "0.9rem",
+    color: "#555",
+    fontWeight: "500",
+  },
+  sortSelect: {
+    padding: "0.5rem 1rem",
+    fontSize: "0.9rem",
+    border: "1px solid #ddd",
+    borderRadius: "6px",
+    backgroundColor: "#fff",
+    cursor: "pointer",
+    outline: "none",
   },
 };
 
