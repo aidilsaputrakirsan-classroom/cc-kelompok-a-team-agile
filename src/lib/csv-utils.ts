@@ -1,6 +1,6 @@
 // CSV Export/Import utilities
 
-export function exportToCSV<T extends Record<string, unknown>>(data: T[], filename: string, columns: { key: keyof T; label: string }[]) {
+export function exportToCSV<T>(data: T[], filename: string, columns: { key: keyof T; label: string }[]) {
   const header = columns.map(c => c.label).join(',');
   const rows = data.map(row =>
     columns.map(c => {
