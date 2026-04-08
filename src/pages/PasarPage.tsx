@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useData } from '@/contexts/DataContext';
 import type { Pasar } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
@@ -6,12 +6,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Plus, Pencil, Trash2, MapPin, Search } from 'lucide-react';
+import { Plus, Pencil, Trash2, MapPin, Search, Download, Upload, ArrowUpDown } from 'lucide-react';
 import { toast } from 'sonner';
+import { exportToCSV, parseCSV } from '@/lib/csv-utils';
+
+type SortField = 'nama' | 'alamat';
+type SortDir = 'asc' | 'desc';
 
 const emptyPasar = { nama: '', longitude: 0, latitude: 0, alamat: '', is_active: 1 };
 
@@ -22,8 +27,23 @@ export default function PasarPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Pasar | null>(null);
   const [form, setForm] = useState<Omit<Pasar, 'id'>>(emptyPasar);
+  const [sortField, setSortField] = useState<SortField>('nama');
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const filtered = pasar.filter(p => p.nama.toLowerCase().includes(search.toLowerCase()));
+  const filtered = pasar
+    .filter(p => p.nama.toLowerCase().includes(search.toLowerCase()) || p.alamat.toLowerCase().includes(search.toLowerCase()))
+    .filter(p => filterStatus === 'all' || (filterStatus === 'active' ? p.is_active === 1 : p.is_active === 0))
+    .sort((a, b) => {
+      const mul = sortDir === 'asc' ? 1 : -1;
+      return (a[sortField] || '').toString().localeCompare((b[sortField] || '').toString()) * mul;
+    });
+
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortField(field); setSortDir('asc'); }
+  };
 
   const openAdd = () => { setEditing(null); setForm(emptyPasar); setDialogOpen(true); };
   const openEdit = (p: Pasar) => { setEditing(p); setForm({ nama: p.nama, longitude: p.longitude, latitude: p.latitude, alamat: p.alamat, is_active: p.is_active }); setDialogOpen(true); };
@@ -31,101 +51,142 @@ export default function PasarPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.nama.trim()) { toast.error('Nama pasar wajib diisi'); return; }
-    if (editing) {
-      updatePasar(editing.id, form);
-      toast.success('Pasar berhasil diperbarui');
-    } else {
-      addPasar(form);
-      toast.success('Pasar berhasil ditambahkan');
-    }
+    if (editing) { updatePasar(editing.id, form); toast.success('Pasar diperbarui'); }
+    else { addPasar(form); toast.success('Pasar ditambahkan'); }
     setDialogOpen(false);
   };
 
-  const handleDelete = (id: string) => {
-    deletePasar(id);
-    toast.success('Pasar berhasil dihapus');
+  const handleExport = () => {
+    exportToCSV(pasar, 'pasar', [
+      { key: 'nama', label: 'Nama' },
+      { key: 'alamat', label: 'Alamat' },
+      { key: 'longitude', label: 'Longitude' },
+      { key: 'latitude', label: 'Latitude' },
+      { key: 'is_active', label: 'Aktif' },
+    ]);
+    toast.success('Data diekspor');
+  };
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const rows = parseCSV(reader.result as string);
+      let count = 0;
+      rows.forEach(r => {
+        if (r['Nama']?.trim()) {
+          addPasar({
+            nama: r['Nama'].trim(),
+            alamat: r['Alamat'] || '',
+            longitude: parseFloat(r['Longitude']) || 0,
+            latitude: parseFloat(r['Latitude']) || 0,
+            is_active: r['Aktif'] === '0' ? 0 : 1,
+          });
+          count++;
+        }
+      });
+      toast.success(`${count} pasar diimpor`);
+    };
+    reader.readAsText(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold">Pasar</h1>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openAdd} className="bg-accent text-accent-foreground hover:bg-accent/90">
-              <Plus className="h-4 w-4 mr-1" /> Tambah
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editing ? 'Edit Pasar' : 'Tambah Pasar'}</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label>Nama</Label>
-                <Input value={form.nama} onChange={e => setForm({ ...form, nama: e.target.value })} required />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Longitude</Label>
-                  <Input type="number" step="any" value={form.longitude} onChange={e => setForm({ ...form, longitude: parseFloat(e.target.value) || 0 })} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Latitude</Label>
-                  <Input type="number" step="any" value={form.latitude} onChange={e => setForm({ ...form, latitude: parseFloat(e.target.value) || 0 })} />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Alamat</Label>
-                <Input value={form.alamat} onChange={e => setForm({ ...form, alamat: e.target.value })} />
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch checked={form.is_active === 1} onCheckedChange={c => setForm({ ...form, is_active: c ? 1 : 0 })} />
-                <Label>Aktif</Label>
-              </div>
-              <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-                {editing ? 'Perbarui' : 'Simpan'}
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-xl md:text-2xl font-bold">Pasar</h1>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleExport} className="hidden sm:flex">
+            <Download className="h-4 w-4 mr-1" /> Ekspor
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="hidden sm:flex">
+            <Upload className="h-4 w-4 mr-1" /> Impor
+          </Button>
+          <input ref={fileInputRef} type="file" accept=".csv" onChange={handleImport} className="hidden" />
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={openAdd} size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90">
+                <Plus className="h-4 w-4 mr-1" /> Tambah
               </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>{editing ? 'Edit Pasar' : 'Tambah Pasar'}</DialogTitle></DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Nama</Label>
+                  <Input value={form.nama} onChange={e => setForm({ ...form, nama: e.target.value })} required />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Longitude</Label>
+                    <Input type="number" step="any" value={form.longitude} onChange={e => setForm({ ...form, longitude: parseFloat(e.target.value) || 0 })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Latitude</Label>
+                    <Input type="number" step="any" value={form.latitude} onChange={e => setForm({ ...form, latitude: parseFloat(e.target.value) || 0 })} />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Alamat</Label>
+                  <Input value={form.alamat} onChange={e => setForm({ ...form, alamat: e.target.value })} />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={form.is_active === 1} onCheckedChange={c => setForm({ ...form, is_active: c ? 1 : 0 })} />
+                  <Label>Aktif</Label>
+                </div>
+                <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+                  {editing ? 'Perbarui' : 'Simpan'}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Cari pasar..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
+      {/* Search & Filter */}
+      <div className="flex flex-col sm:flex-row gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Cari pasar..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10 h-9" />
+        </div>
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="w-full sm:w-36 h-9">
+            <SelectValue placeholder="Semua Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Semua Status</SelectItem>
+            <SelectItem value="active">Aktif</SelectItem>
+            <SelectItem value="inactive">Nonaktif</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button variant="outline" size="sm" className="h-9 sm:hidden" onClick={handleExport}>
+          <Download className="h-4 w-4 mr-1" /> Ekspor
+        </Button>
       </div>
 
       {isMobile ? (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {filtered.map(p => (
             <Card key={p.id}>
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="font-semibold">{p.nama}</h3>
-                    <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                      <MapPin className="h-3 w-3" /> {p.alamat || '-'}
+              <CardContent className="p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm">{p.nama}</h3>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                      <MapPin className="h-3 w-3 shrink-0" /> <span className="truncate">{p.alamat || '-'}</span>
                     </p>
-                    <span className={`inline-block mt-2 text-xs px-2 py-0.5 rounded-full ${p.is_active ? 'bg-success/20 text-success' : 'bg-muted text-muted-foreground'}`}>
+                    <span className={`inline-block mt-1.5 text-xs px-2 py-0.5 rounded-full font-medium ${p.is_active ? 'bg-green-500/15 text-green-600' : 'bg-muted text-muted-foreground'}`}>
                       {p.is_active ? 'Aktif' : 'Nonaktif'}
                     </span>
                   </div>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(p)}><Pencil className="h-4 w-4" /></Button>
+                  <div className="flex gap-0.5 shrink-0">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(p)}><Pencil className="h-3.5 w-3.5" /></Button>
                     <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                      </AlertDialogTrigger>
+                      <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button></AlertDialogTrigger>
                       <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Hapus Pasar?</AlertDialogTitle>
-                          <AlertDialogDescription>Data "{p.nama}" akan dihapus permanen.</AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Batal</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDelete(p.id)}>Hapus</AlertDialogAction>
-                        </AlertDialogFooter>
+                        <AlertDialogHeader><AlertDialogTitle>Hapus Pasar?</AlertDialogTitle><AlertDialogDescription>Data "{p.nama}" akan dihapus permanen.</AlertDialogDescription></AlertDialogHeader>
+                        <AlertDialogFooter><AlertDialogCancel>Batal</AlertDialogCancel><AlertDialogAction onClick={() => { deletePasar(p.id); toast.success('Dihapus'); }}>Hapus</AlertDialogAction></AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
                   </div>
@@ -133,48 +194,42 @@ export default function PasarPage() {
               </CardContent>
             </Card>
           ))}
-          {filtered.length === 0 && <p className="text-center text-muted-foreground py-8">Tidak ada data pasar.</p>}
+          {filtered.length === 0 && <p className="text-center text-muted-foreground py-8 text-sm">Tidak ada data pasar.</p>}
         </div>
       ) : (
         <Card>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nama</TableHead>
-                <TableHead>Alamat</TableHead>
-                <TableHead>Longitude</TableHead>
-                <TableHead>Latitude</TableHead>
+                <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('nama')}>
+                  Nama <ArrowUpDown className="inline h-3 w-3 ml-1" />
+                </TableHead>
+                <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('alamat')}>
+                  Alamat <ArrowUpDown className="inline h-3 w-3 ml-1" />
+                </TableHead>
+                <TableHead>Koordinat</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Aksi</TableHead>
+                <TableHead className="text-right w-24">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.map(p => (
                 <TableRow key={p.id}>
                   <TableCell className="font-medium">{p.nama}</TableCell>
-                  <TableCell>{p.alamat || '-'}</TableCell>
-                  <TableCell>{p.longitude}</TableCell>
-                  <TableCell>{p.latitude}</TableCell>
+                  <TableCell className="text-sm">{p.alamat || '-'}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{p.longitude}, {p.latitude}</TableCell>
                   <TableCell>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${p.is_active ? 'bg-success/20 text-success' : 'bg-muted text-muted-foreground'}`}>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${p.is_active ? 'bg-green-500/15 text-green-600' : 'bg-muted text-muted-foreground'}`}>
                       {p.is_active ? 'Aktif' : 'Nonaktif'}
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(p)}><Pencil className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(p)}><Pencil className="h-3.5 w-3.5" /></Button>
                     <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                      </AlertDialogTrigger>
+                      <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button></AlertDialogTrigger>
                       <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Hapus Pasar?</AlertDialogTitle>
-                          <AlertDialogDescription>Data "{p.nama}" akan dihapus permanen.</AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Batal</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDelete(p.id)}>Hapus</AlertDialogAction>
-                        </AlertDialogFooter>
+                        <AlertDialogHeader><AlertDialogTitle>Hapus Pasar?</AlertDialogTitle><AlertDialogDescription>Data "{p.nama}" akan dihapus permanen.</AlertDialogDescription></AlertDialogHeader>
+                        <AlertDialogFooter><AlertDialogCancel>Batal</AlertDialogCancel><AlertDialogAction onClick={() => { deletePasar(p.id); toast.success('Dihapus'); }}>Hapus</AlertDialogAction></AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
                   </TableCell>
