@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import type { Pasar, Komoditas, TempatUsaha, KomoditasDijual, HargaRutin, HargaPelaporan } from '@/types';
+import type { Pasar, Komoditas, TempatUsaha, KomoditasDijual, HargaRutin, HargaPelaporan, SatuanDasar } from '@/types';
 
 function load<T>(key: string, fallback: T[]): T[] {
   try {
@@ -44,7 +44,6 @@ export const useData = () => {
   return ctx;
 };
 
-// Generate mock data
 function generateMockData() {
   const mockPasar: Pasar[] = [
     { id: uid(), nama: 'Pasar Andir', longitude: 107.5731, latitude: -6.9147, alamat: 'Jl. Andir No. 1, Bandung', is_active: 1 },
@@ -52,11 +51,11 @@ function generateMockData() {
     { id: uid(), nama: 'Pasar Caringin', longitude: 107.5819, latitude: -6.9350, alamat: 'Jl. Soekarno Hatta No. 525, Bandung', is_active: 1 },
   ];
   const mockKomoditas: Komoditas[] = [
-    { id: uid(), nama: 'Beras Premium', standardized_unit: 1, gambar: '' },
-    { id: uid(), nama: 'Cabai Merah', standardized_unit: 1, gambar: '' },
-    { id: uid(), nama: 'Bawang Merah', standardized_unit: 1, gambar: '' },
-    { id: uid(), nama: 'Minyak Goreng', standardized_unit: 1, gambar: '' },
-    { id: uid(), nama: 'Gula Pasir', standardized_unit: 1, gambar: '' },
+    { id: uid(), nama: 'Beras Premium', satuan_dasar: 'kg', gambar: '' },
+    { id: uid(), nama: 'Cabai Merah', satuan_dasar: 'kg', gambar: '' },
+    { id: uid(), nama: 'Bawang Merah', satuan_dasar: 'kg', gambar: '' },
+    { id: uid(), nama: 'Minyak Goreng', satuan_dasar: 'liter', gambar: '' },
+    { id: uid(), nama: 'Gula Pasir', satuan_dasar: 'kg', gambar: '' },
   ];
   return { mockPasar, mockKomoditas };
 }

@@ -7,11 +7,22 @@ export interface Pasar {
   is_active: number;
 }
 
+export type SatuanDasar = 'kg' | 'gram' | 'ons' | 'ton' | 'liter' | 'ml';
+
+export const SATUAN_DASAR_OPTIONS: { value: SatuanDasar; label: string }[] = [
+  { value: 'kg', label: 'Kilogram (kg)' },
+  { value: 'gram', label: 'Gram (g)' },
+  { value: 'ons', label: 'Ons' },
+  { value: 'ton', label: 'Ton' },
+  { value: 'liter', label: 'Liter (L)' },
+  { value: 'ml', label: 'Mililiter (mL)' },
+];
+
 export interface Komoditas {
   id: string;
   nama: string;
-  standardized_unit: number;
-  gambar: string;
+  satuan_dasar: SatuanDasar;
+  gambar: string; // base64 data URL
 }
 
 export interface TempatUsaha {
@@ -37,7 +48,6 @@ export interface KomoditasDijual {
   lokasi_supplier: string;
   pola_distribusi: number;
   standardized_stock_periode: number;
-  kelas_komoditas: KelasKomoditas;
   is_active: boolean;
 }
 
