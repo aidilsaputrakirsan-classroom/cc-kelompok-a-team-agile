@@ -11,7 +11,8 @@
  */
 import { useState, useMemo, useRef } from 'react';
 import { useData } from '@/contexts/DataContext';
-import type { HargaRutin, KelasKomoditas } from '@/types';
+import type { HargaRutin, KelasKomoditas, SatuanDasar } from '@/types';
+import { SATUAN_DASAR_OPTIONS, KONVERSI_SATUAN, hitungHargaStandar } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -69,7 +70,25 @@ export default function HargaRutinPage() {
   const [kelasKomoditas, setKelasKomoditas] = useState<KelasKomoditas | ''>('');
   const [tempatUsahaId, setTempatUsahaId] = useState('');
   const [harga, setHarga] = useState<number>(0);
+  const [jumlahInput, setJumlahInput] = useState<number>(1);
+  const [satuanInput, setSatuanInput] = useState<SatuanDasar>('kg');
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  /** Satuan dasar komoditas yang sedang dipilih */
+  const selectedKomoditas = komoditas.find(k => k.id === komoditasId);
+  const satuanDasar = selectedKomoditas?.satuan_dasar || 'kg';
+
+  /** Opsi satuan yang kompatibel (massa↔massa, volume↔volume) */
+  const compatibleSatuanOptions = useMemo(() => {
+    const baseType = KONVERSI_SATUAN[satuanDasar]?.base || 'kg';
+    return SATUAN_DASAR_OPTIONS.filter(s => KONVERSI_SATUAN[s.value].base === baseType);
+  }, [satuanDasar]);
+
+  /** Harga terstandarisasi per satuan dasar (dihitung otomatis) */
+  const hargaStandar = useMemo(() => {
+    if (harga <= 0 || jumlahInput <= 0) return 0;
+    return hitungHargaStandar(harga, jumlahInput, satuanInput, satuanDasar);
+  }, [harga, jumlahInput, satuanInput, satuanDasar]);
 
   const tanggalStr = tanggal ? format(tanggal, 'yyyy-MM-dd') : '';
 
@@ -120,7 +139,8 @@ export default function HargaRutinPage() {
   /* ===== Handler form ===== */
   const resetForm = () => {
     setStep(1); setNamaEnumerator(''); setTanggal(undefined); setPasarId('');
-    setKomoditasId(''); setKelasKomoditas(''); setTempatUsahaId(''); setHarga(0); setEditingId(null);
+    setKomoditasId(''); setKelasKomoditas(''); setTempatUsahaId(''); setHarga(0);
+    setJumlahInput(1); setSatuanInput('kg'); setEditingId(null);
   };
 
   const openForm = () => { resetForm(); setShowForm(true); };
@@ -131,7 +151,8 @@ export default function HargaRutinPage() {
     setEditingId(h.id); setNamaEnumerator(h.nama_enumerator);
     setTanggal(new Date(h.tanggal)); setPasarId(h.pasar_id);
     setKomoditasId(h.komoditas_id); setKelasKomoditas(h.kelas_komoditas);
-    setTempatUsahaId(h.tempat_usaha_id); setHarga(h.harga);
+    setTempatUsahaId(h.tempat_usaha_id); setHarga(h.harga_input);
+    setJumlahInput(h.jumlah_input); setSatuanInput(h.satuan_input);
     setStep(2); setShowForm(true);
   };
 
@@ -142,7 +163,7 @@ export default function HargaRutinPage() {
 
   /** Validasi sebelum review */
   const handleReview = () => {
-    if (!komoditasId || !kelasKomoditas || !tempatUsahaId || harga <= 0) { toast.error('Lengkapi semua field'); return; }
+    if (!komoditasId || !kelasKomoditas || !tempatUsahaId || harga <= 0 || jumlahInput <= 0) { toast.error('Lengkapi semua field'); return; }
     if (usedKelas.has(kelasKomoditas) && !editingId) { toast.error(`Kelas ${kelasKomoditas} sudah diinput untuk komoditas ini hari ini`); return; }
     setReviewOpen(true);
   };
@@ -152,13 +173,19 @@ export default function HargaRutinPage() {
     const data = {
       nama_enumerator: namaEnumerator, tanggal: tanggalStr, pasar_id: pasarId,
       komoditas_id: komoditasId, kelas_komoditas: kelasKomoditas as KelasKomoditas,
-      tempat_usaha_id: tempatUsahaId, harga, status: 'finalisasi' as const,
+      tempat_usaha_id: tempatUsahaId,
+      harga_input: harga,
+      jumlah_input: jumlahInput,
+      satuan_input: satuanInput,
+      harga: hargaStandar,
+      status: 'finalisasi' as const,
     };
     if (editingId) { updateHargaRutin(editingId, data); toast.success('Diperbarui & difinalisasi'); }
     else { addHargaRutin(data); toast.success('Data difinalisasi'); }
     setReviewOpen(false);
     // Reset hanya field step 2, tetap di step 2 untuk input kelas berikutnya
-    setKomoditasId(''); setKelasKomoditas(''); setTempatUsahaId(''); setHarga(0); setEditingId(null);
+    setKomoditasId(''); setKelasKomoditas(''); setTempatUsahaId(''); setHarga(0);
+    setJumlahInput(1); setSatuanInput('kg'); setEditingId(null);
   };
 
   /* ===== Ekspor CSV ===== */
@@ -248,7 +275,7 @@ export default function HargaRutinPage() {
                 </p>
                 <div className="space-y-2">
                   <Label>Komoditas</Label>
-                  <Select value={komoditasId} onValueChange={v => { setKomoditasId(v); setKelasKomoditas(''); setTempatUsahaId(''); }}>
+                  <Select value={komoditasId} onValueChange={v => { setKomoditasId(v); setKelasKomoditas(''); setTempatUsahaId(''); const kom = komoditas.find(k => k.id === v); if (kom) setSatuanInput(kom.satuan_dasar); }}>
                     <SelectTrigger><SelectValue placeholder="Pilih komoditas" /></SelectTrigger>
                     <SelectContent>
                       {(komoditasForPasar.length > 0 ? komoditasForPasar : komoditas).map(k => (
@@ -281,10 +308,40 @@ export default function HargaRutinPage() {
                     </SelectContent>
                   </Select>
                 </div>
+                {/* Input harga dan satuan berat */}
                 <div className="space-y-2">
                   <Label>Harga (Rp)</Label>
                   <Input type="number" value={harga || ''} onChange={e => setHarga(parseFloat(e.target.value) || 0)} placeholder="0" />
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Jumlah</Label>
+                    <Input type="number" value={jumlahInput || ''} onChange={e => setJumlahInput(parseFloat(e.target.value) || 0)} placeholder="1" min={0.01} step="any" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Satuan</Label>
+                    <Select value={satuanInput} onValueChange={v => setSatuanInput(v as SatuanDasar)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {compatibleSatuanOptions.map(s => (
+                          <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                {/* Hasil konversi otomatis — harga per satuan dasar komoditas */}
+                {harga > 0 && jumlahInput > 0 && (
+                  <div className="rounded-lg border border-accent/30 bg-accent/5 p-3 space-y-1">
+                    <p className="text-xs text-muted-foreground">Harga terstandarisasi per {satuanDasar}:</p>
+                    <p className="text-lg font-bold text-accent">Rp {hargaStandar.toLocaleString('id-ID')}/{satuanDasar}</p>
+                    {satuanInput !== satuanDasar && (
+                      <p className="text-xs text-muted-foreground">
+                        Rp {harga.toLocaleString('id-ID')} / {jumlahInput} {satuanInput} → Rp {hargaStandar.toLocaleString('id-ID')}/{satuanDasar}
+                      </p>
+                    )}
+                  </div>
+                )}
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={() => setStep(1)} className="flex-1">Kembali</Button>
                   <Button onClick={handleReview} className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90">Lanjut</Button>
@@ -332,7 +389,8 @@ export default function HargaRutinPage() {
                 <span className="text-muted-foreground">Komoditas</span><span className="font-medium">{komoditasName}</span>
                 <span className="text-muted-foreground">Kelas</span><span className="font-medium capitalize">{kelasKomoditas}</span>
                 <span className="text-muted-foreground">Tempat Usaha</span><span className="font-medium">{tuName}</span>
-                <span className="text-muted-foreground">Harga</span><span className="font-bold text-accent">Rp {harga.toLocaleString('id-ID')}</span>
+                <span className="text-muted-foreground">Harga Input</span><span className="font-medium">Rp {harga.toLocaleString('id-ID')} / {jumlahInput} {satuanInput}</span>
+                <span className="text-muted-foreground">Harga Standar</span><span className="font-bold text-accent">Rp {hargaStandar.toLocaleString('id-ID')}/{satuanDasar}</span>
               </div>
             </div>
             <DialogFooter>
@@ -408,7 +466,7 @@ export default function HargaRutinPage() {
                     <p className="text-xs text-muted-foreground mt-1">
                       {pas?.nama} • {h.tanggal} • {h.nama_enumerator}
                     </p>
-                    <p className="text-sm font-bold mt-1 text-accent">Rp {h.harga.toLocaleString('id-ID')}</p>
+                    <p className="text-sm font-bold mt-1 text-accent">Rp {h.harga.toLocaleString('id-ID')}/{kom?.satuan_dasar || ''}</p>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     {/* Badge status — hijau final, kuning proses */}
