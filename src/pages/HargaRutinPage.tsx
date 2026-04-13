@@ -70,7 +70,25 @@ export default function HargaRutinPage() {
   const [kelasKomoditas, setKelasKomoditas] = useState<KelasKomoditas | ''>('');
   const [tempatUsahaId, setTempatUsahaId] = useState('');
   const [harga, setHarga] = useState<number>(0);
+  const [jumlahInput, setJumlahInput] = useState<number>(1);
+  const [satuanInput, setSatuanInput] = useState<SatuanDasar>('kg');
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  /** Satuan dasar komoditas yang sedang dipilih */
+  const selectedKomoditas = komoditas.find(k => k.id === komoditasId);
+  const satuanDasar = selectedKomoditas?.satuan_dasar || 'kg';
+
+  /** Opsi satuan yang kompatibel (massa↔massa, volume↔volume) */
+  const compatibleSatuanOptions = useMemo(() => {
+    const baseType = KONVERSI_SATUAN[satuanDasar]?.base || 'kg';
+    return SATUAN_DASAR_OPTIONS.filter(s => KONVERSI_SATUAN[s.value].base === baseType);
+  }, [satuanDasar]);
+
+  /** Harga terstandarisasi per satuan dasar (dihitung otomatis) */
+  const hargaStandar = useMemo(() => {
+    if (harga <= 0 || jumlahInput <= 0) return 0;
+    return hitungHargaStandar(harga, jumlahInput, satuanInput, satuanDasar);
+  }, [harga, jumlahInput, satuanInput, satuanDasar]);
 
   const tanggalStr = tanggal ? format(tanggal, 'yyyy-MM-dd') : '';
 
