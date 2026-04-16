@@ -413,14 +413,17 @@ export default function LandingPage() {
     {
       title: "Harga Komoditas",
       subtitle: "Pantau pergerakan harga harian dengan cepat",
+      image: "/images/komoditas.png",
     },
     {
       title: "Pasar Aktif",
       subtitle: "Data pasar terhubung langsung dengan petugas",
+      image: "/images/pasar.png",
     },
     {
       title: "Tempat Usaha",
       subtitle: "Harga pedagang terkelola dan terverifikasi",
+      image: "/images/tempat-usaha.png",
     },
   ];
 
@@ -544,20 +547,29 @@ export default function LandingPage() {
                 <CarouselContent>
                   {heroSlides.map((slide) => (
                     <CarouselItem key={slide.title}>
-                      <div className="h-64 sm:h-80 p-6 flex flex-col justify-between">
-                        <div className="h-10 w-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center">
-                          <MapPin className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <p className="text-xs uppercase tracking-[0.3em] text-primary/70">
-                            Highlight
-                          </p>
-                          <h3 className="text-2xl font-display font-semibold">
-                            {slide.title}
-                          </h3>
-                          <p className="text-sm text-muted-foreground mt-2">
-                            {slide.subtitle}
-                          </p>
+                      <div className="relative h-64 sm:h-80 overflow-hidden">
+                        <img
+                          src={slide.image}
+                          alt={slide.title}
+                          loading="lazy"
+                          className="h-full w-full object-cover"
+                        />
+                        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-36 sm:h-44 bg-gradient-to-t from-black/75 via-black/35 to-transparent" />
+                        <div className="absolute inset-0 p-6 flex flex-col justify-between text-white">
+                          <div className="h-10 w-10 rounded-xl bg-white/20 backdrop-blur-sm text-white flex items-center justify-center">
+                            <MapPin className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <p className="text-xs uppercase tracking-[0.3em] text-white/80">
+                              Highlight
+                            </p>
+                            <h3 className="text-2xl font-display font-semibold">
+                              {slide.title}
+                            </h3>
+                            <p className="text-sm text-white/90 mt-2">
+                              {slide.subtitle}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </CarouselItem>
