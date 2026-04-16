@@ -76,13 +76,19 @@ export default function LandingPage() {
     }).format(date);
   };
 
-  useEffect(() => {
-    L.Icon.Default.mergeOptions({
-      iconRetinaUrl: markerIcon2x,
-      iconUrl: markerIcon,
-      shadowUrl: markerShadow,
-    });
-  }, []);
+  const marketMarkerIcon = useMemo(
+    () =>
+      L.icon({
+        iconRetinaUrl: markerIcon2x,
+        iconUrl: markerIcon,
+        shadowUrl: markerShadow,
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41],
+      }),
+    [],
+  );
 
   useEffect(() => {
     if (!carouselApi) return;
@@ -957,7 +963,11 @@ export default function LandingPage() {
                   (t) => t.pasar_id === p.id && t.is_active,
                 );
                 return (
-                  <Marker key={p.id} position={[p.latitude, p.longitude]}>
+                  <Marker
+                    key={p.id}
+                    position={[p.latitude, p.longitude]}
+                    icon={marketMarkerIcon}
+                  >
                     <Popup>
                       <div className="space-y-2">
                         <div>
