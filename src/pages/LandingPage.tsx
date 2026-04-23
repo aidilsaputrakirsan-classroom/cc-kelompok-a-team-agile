@@ -10,13 +10,6 @@ import { useData } from "@/contexts/DataContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   Carousel,
@@ -24,11 +17,26 @@ import {
   CarouselItem,
   type CarouselApi,
 } from "@/components/ui/carousel";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import {
   ArrowRight,
   Building2,
+  Check,
+  ChevronsUpDown,
   LogIn,
   MapPin,
   Minus,
@@ -37,6 +45,7 @@ import {
   Store,
   TrendingDown,
   TrendingUp,
+  X,
 } from "lucide-react";
 
 type SearchRow = {
@@ -53,6 +62,7 @@ export default function LandingPage() {
   const [query, setQuery] = useState("");
   const [carouselApi, setCarouselApi] = useState<CarouselApi | null>(null);
   const [heroApi, setHeroApi] = useState<CarouselApi | null>(null);
+  const [isTrendSelectorOpen, setIsTrendSelectorOpen] = useState(false);
   const [selectedTrendKomoditasIds, setSelectedTrendKomoditasIds] = useState<
     string[]
   >([]);
@@ -517,42 +527,106 @@ export default function LandingPage() {
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,hsl(var(--primary)/0.08),transparent_34%),radial-gradient(circle_at_90%_15%,hsl(var(--accent)/0.1),transparent_32%)]" />
           <CardContent className="p-4 sm:p-5 space-y-5">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className="flex flex-wrap gap-2">
-                {trendCards.slice(0, 10).map((card, index) => {
-                  const isActive = selectedTrendKomoditasIds.includes(
-                    card.komoditas.id,
-                  );
-                  return (
-                    <button
-                      key={card.komoditas.id}
-                      type="button"
-                      onClick={() => toggleTrendKomoditas(card.komoditas.id)}
-                      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-all ${
-                        isActive
-                          ? "border-transparent shadow-md ring-1 ring-offset-1"
-                          : "border-border bg-background/50 text-muted-foreground hover:border-border/80 hover:bg-background/80 hover:text-foreground"
-                      }`}
-                      style={{
-                        animationDelay: `${index * 40}ms`,
-                        ...(isActive && {
-                          backgroundColor: `${trendPalette[index % trendPalette.length]}15`,
-                          borderColor:
-                            trendPalette[index % trendPalette.length],
-                          color: trendPalette[index % trendPalette.length],
-                        }),
-                      }}
+              <div className="flex flex-col gap-2 min-w-[260px]">
+                <Popover
+                  open={isTrendSelectorOpen}
+                  onOpenChange={setIsTrendSelectorOpen}
+                >
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={isTrendSelectorOpen}
+                      className="w-full justify-between border-border/70 bg-background/80 text-left font-normal hover:bg-background"
                     >
-                      <span
-                        className="h-2 w-2 rounded-full ring-1 ring-white/40"
-                        style={{
-                          backgroundColor:
-                            trendPalette[index % trendPalette.length],
-                        }}
-                      />
-                      {card.komoditas.nama}
-                    </button>
-                  );
-                })}
+                      <span className="truncate">
+                        {selectedTrendCards.length === 0
+                          ? "Pilih komoditas"
+                          : selectedTrendCards.length === 1
+                            ? selectedTrendCards[0].komoditas.nama
+                            : `${selectedTrendCards.length} komoditas dipilih`}
+                      </span>
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-60" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    align="start"
+                    className="w-[300px] p-0 sm:w-[360px]"
+                  >
+                    <Command>
+                      <CommandInput placeholder="Cari komoditas untuk grafik..." />
+                      <CommandList>
+                        <CommandEmpty>Komoditas tidak ditemukan.</CommandEmpty>
+                        <CommandGroup>
+                          {trendCards.map((card, index) => {
+                            const isSelected = selectedTrendKomoditasIds.includes(
+                              card.komoditas.id,
+                            );
+                            const latestPrice = card.latest?.harga_rata_rata;
+                            return (
+                              <CommandItem
+                                key={card.komoditas.id}
+                                value={`${card.komoditas.nama}-${card.komoditas.id}`}
+                                onSelect={() => toggleTrendKomoditas(card.komoditas.id)}
+                                className="flex items-center justify-between gap-3"
+                              >
+                                <div className="flex min-w-0 items-center gap-2">
+                                  <span
+                                    className="h-2.5 w-2.5 shrink-0 rounded-full"
+                                    style={{
+                                      backgroundColor:
+                                        trendPalette[index % trendPalette.length],
+                                    }}
+                                  />
+                                  <span className="truncate text-sm">
+                                    {card.komoditas.nama}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {latestPrice ? (
+                                    <span className="text-[11px] text-muted-foreground">
+                                      {latestPrice.toLocaleString("id-ID")}
+                                    </span>
+                                  ) : null}
+                                  <Check
+                                    className={`h-4 w-4 ${
+                                      isSelected ? "opacity-100" : "opacity-0"
+                                    }`}
+                                  />
+                                </div>
+                              </CommandItem>
+                            );
+                          })}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+
+                {selectedTrendCards.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedTrendCards.map((card, index) => (
+                      <button
+                        key={`selected-${card.komoditas.id}`}
+                        type="button"
+                        onClick={() => toggleTrendKomoditas(card.komoditas.id)}
+                        className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2.5 py-1 text-xs text-foreground transition-colors hover:bg-background"
+                      >
+                        <span
+                          className="h-1.5 w-1.5 rounded-full"
+                          style={{
+                            backgroundColor:
+                              trendPalette[index % trendPalette.length],
+                          }}
+                        />
+                        <span className="max-w-[120px] truncate">
+                          {card.komoditas.nama}
+                        </span>
+                        <X className="h-3 w-3 text-muted-foreground" />
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
