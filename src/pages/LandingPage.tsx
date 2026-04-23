@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import L from "leaflet";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
@@ -82,10 +82,12 @@ export default function LandingPage() {
   const [selectedMapPasarId, setSelectedMapPasarId] = useState<string | null>(
     null,
   );
+  const [isMapSectionVisible, setIsMapSectionVisible] = useState(false);
   const [isTrendSelectorOpen, setIsTrendSelectorOpen] = useState(false);
   const [selectedTrendKomoditasIds, setSelectedTrendKomoditasIds] = useState<
     string[]
   >([]);
+  const mapSectionRef = useRef<HTMLElement | null>(null);
 
   const getStaggerStyle = (index: number, baseDelay = 0) => ({
     animationDelay: `${baseDelay + index * 80}ms`,
@@ -160,6 +162,32 @@ export default function LandingPage() {
 
     return () => observer.disconnect();
   }, [query, activeStat, selectedStatItemId, selectedMapPasarId]);
+
+  useEffect(() => {
+    const element = mapSectionRef.current;
+    if (!element) return;
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setIsMapSectionVisible(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        setIsMapSectionVisible(true);
+        observer.disconnect();
+      },
+      {
+        threshold: 0.15,
+        rootMargin: "180px 0px",
+      },
+    );
+
+    observer.observe(element);
+
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     setSelectedKomoditasDetailId(null);
@@ -747,13 +775,14 @@ export default function LandingPage() {
             <CardContent className="p-0">
               <Carousel opts={{ loop: true }} setApi={setHeroApi}>
                 <CarouselContent>
-                  {heroSlides.map((slide) => (
+                  {heroSlides.map((slide, index) => (
                     <CarouselItem key={slide.title}>
                       <div className="relative h-full sm:h-80 overflow-hidden">
                         <img
                           src={slide.image}
                           alt={slide.title}
-                          loading="lazy"
+                          loading={index === 0 ? "eager" : "lazy"}
+                          decoding="async"
                           className="h-full w-full object-cover"
                         />
                         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-36 sm:h-44 bg-gradient-to-t from-black/75 via-black/35 to-transparent" />
@@ -1639,6 +1668,7 @@ export default function LandingPage() {
       <section
         className="focus-section focus-map animate-fade-up"
         style={{ animationDelay: "240ms" }}
+        ref={mapSectionRef}
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16">
           <div className="flex items-center justify-between gap-4 flex-wrap mb-6">
@@ -1658,36 +1688,49 @@ export default function LandingPage() {
               className="rounded-2xl border border-border overflow-hidden animate-fade-up"
               style={{ animationDelay: "260ms" }}
             >
-              <MapContainer
-                center={mapCenter}
-                zoom={12}
-                scrollWheelZoom={false}
-                className="h-[440px] w-full"
-              >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                {activePasarWithCoords.map((p) => (
-                  <Marker
-                    key={p.id}
-                    position={[p.latitude, p.longitude]}
-                    icon={marketMarkerIcon}
-                    eventHandlers={{
-                      click: () => setSelectedMapPasarId(p.id),
-                    }}
-                  >
-                    <Popup>
-                      <div className="space-y-1">
-                        <p className="font-semibold">{p.nama}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {p.alamat}
-                        </p>
-                      </div>
-                    </Popup>
-                  </Marker>
-                ))}
-              </MapContainer>
+              {isMapSectionVisible ? (
+                <MapContainer
+                  center={mapCenter}
+                  zoom={12}
+                  scrollWheelZoom={false}
+                  className="h-[440px] w-full"
+                >
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  {activePasarWithCoords.map((p) => (
+                    <Marker
+                      key={p.id}
+                      position={[p.latitude, p.longitude]}
+                      icon={marketMarkerIcon}
+                      eventHandlers={{
+                        click: () => setSelectedMapPasarId(p.id),
+                      }}
+                    >
+                      <Popup>
+                        <div className="space-y-1">
+                          <p className="font-semibold">{p.nama}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {p.alamat}
+                          </p>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  ))}
+                </MapContainer>
+              ) : (
+                <div className="h-[440px] w-full bg-muted/20 flex items-center justify-center">
+                  <div className="text-center space-y-2 px-6">
+                    <p className="font-medium text-foreground">
+                      Peta akan dimuat saat section terlihat
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Ini mengurangi beban awal halaman.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-3 max-h-full pr-1">
