@@ -15,6 +15,7 @@ Dashboard admin berbasis React + TypeScript untuk mengelola data pasar, komodita
 - [Daftar Script NPM](#daftar-script-npm)
 - [Pengujian dan Linting](#pengujian-dan-linting)
 - [Penyimpanan Data](#penyimpanan-data)
+- [Dokumen API Contract](#dokumen-api-contract)
 - [Struktur Proyek](#struktur-proyek)
 - [Troubleshooting](#troubleshooting)
 - [Catatan Keamanan](#catatan-keamanan)
@@ -208,6 +209,18 @@ Catatan perilaku data:
 - Saat logout, key `auth` akan dihapus.
 
 Untuk reset data demo, bersihkan localStorage dari browser DevTools.
+
+## Dokumen API Contract
+
+Spesifikasi kontrak API per page tersedia di [docs/api-contract.md](docs/api-contract.md).
+
+Dokumen tersebut memuat:
+
+- Endpoint per page
+- HTTP method
+- Request dan response format
+- Status code yang diharapkan
+- Struktur error handling standar
 
 ## Struktur Proyek
 
