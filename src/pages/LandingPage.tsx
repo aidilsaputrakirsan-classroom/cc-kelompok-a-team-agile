@@ -377,23 +377,6 @@ export default function LandingPage() {
     "hsl(var(--info))",
   ];
 
-  const trendChartStats = useMemo(() => {
-    const allPrices = selectedTrendSeries.flatMap((item) =>
-      item.series.map((point) => point.harga),
-    );
-    if (allPrices.length === 0) return null;
-
-    const min = Math.min(...allPrices);
-    const max = Math.max(...allPrices);
-    const spread = max - min;
-
-    return {
-      min,
-      max,
-      spread,
-    };
-  }, [selectedTrendSeries]);
-
   const trendChartConfig = useMemo(() => {
     return selectedTrendSeries.reduce<Record<string, { label: string }>>(
       (acc, item) => {
@@ -700,8 +683,8 @@ export default function LandingPage() {
               className="section-lead text-base sm:text-sm animate-fade-up"
               style={{ animationDelay: "250ms" }}
             >
-              Cari nama komoditas untuk melihat harga rata-rata terbaru.
-              Semua data dirangkum agar mudah dipahami.
+              Cari nama komoditas untuk melihat harga rata-rata terbaru. Semua
+              data dirangkum agar mudah dipahami.
             </p>
             <div
               className="relative animate-fade-up"
@@ -1395,12 +1378,6 @@ export default function LandingPage() {
                       : "Pilih komoditas untuk mulai"}
                   </h3>
                 </div>
-
-                {trendChartStats && (
-                  <div className="rounded-full border border-border/70 bg-background px-3 py-1 text-xs text-muted-foreground">
-                    Rentang Rp {trendChartStats.spread.toLocaleString("id-ID")}
-                  </div>
-                )}
               </div>
 
               <div className="h-[250px] overflow-hidden rounded-2xl border border-border/70 bg-background sm:h-[300px] lg:h-[340px]">
@@ -1573,7 +1550,7 @@ export default function LandingPage() {
       </section>
 
       <section
-        className="focus-section focus-commodities focus-light animate-fade-up"
+        className="focus-section focus-commodities animate-fade-up"
         style={{ animationDelay: "200ms" }}
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-14">
