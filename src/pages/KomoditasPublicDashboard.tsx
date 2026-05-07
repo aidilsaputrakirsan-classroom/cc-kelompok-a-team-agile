@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useData } from "@/contexts/DataContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -33,10 +33,18 @@ const formatTanggal = (tanggal: string) => {
 };
 
 export default function KomoditasPublicDashboard() {
-  const { komoditas, pasar, hargaPelaporan } = useData();
+  const { komoditas, pasar, hargaPelaporan, tempatUsaha, komoditasDijual } =
+    useData();
   const navigate = useNavigate();
+  const location = useLocation();
   const [selectedPasar, setSelectedPasar] = useState<string>("all");
   const [query, setQuery] = useState("");
+
+  // Get filterTempatUsahaId from location state
+  const filterTempatUsahaId = (location.state as any)?.filterTempatUsahaId || null;
+  const filteredTempatUsaha = filterTempatUsahaId
+    ? tempatUsaha.find((t) => t.id === filterTempatUsahaId)
+    : null;
 
   const handleBack = () => {
     if (window.history.length > 1) {
@@ -47,9 +55,40 @@ export default function KomoditasPublicDashboard() {
   };
 
   const filteredPelaporan = useMemo(() => {
-    if (selectedPasar === "all") return hargaPelaporan;
-    return hargaPelaporan.filter((item) => item.pasar_id === selectedPasar);
-  }, [hargaPelaporan, selectedPasar]);
+    let data = hargaPelaporan;
+
+    // Filter by pasar if selected
+    if (selectedPasar !== "all") {
+      data = data.filter((item) => item.pasar_id === selectedPasar);
+    }
+
+    // Filter by tempat usaha if coming from maps
+    if (filterTempatUsahaId && filteredTempatUsaha) {
+      // Get komoditas that are sold at this tempat usaha
+      const komoditasIds = new Set(
+        komoditasDijual
+          .filter(
+            (kd) =>
+              kd.tempat_usaha_id === filterTempatUsahaId && kd.is_active,
+          )
+          .map((kd) => kd.komoditas_id),
+      );
+      // Filter harga pelaporan to only include komoditas from this tempat usaha
+      data = data.filter((item) => komoditasIds.has(item.komoditas_id));
+      // Also filter by pasar where this tempat usaha is located
+      data = data.filter(
+        (item) => item.pasar_id === filteredTempatUsaha.pasar_id,
+      );
+    }
+
+    return data;
+  }, [
+    hargaPelaporan,
+    selectedPasar,
+    filterTempatUsahaId,
+    filteredTempatUsaha,
+    komoditasDijual,
+  ]);
 
   const summaryCards = useMemo(() => {
     return komoditas.map((k) => {
@@ -101,19 +140,26 @@ export default function KomoditasPublicDashboard() {
 
         <div className="space-y-2">
           <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-            Ringkasan Publik
+            {filterTempatUsahaId ? "Detail Tempat Usaha" : "Ringkasan Publik"}
           </p>
           <h2 className="text-2xl sm:text-3xl font-display font-semibold">
-            Harga Komoditas per Pasar
+            {filterTempatUsahaId && filteredTempatUsaha
+              ? `Komoditas di ${filteredTempatUsaha.nama}`
+              : "Harga Komoditas per Pasar"}
           </h2>
           <p className="text-sm text-muted-foreground">
-            Jelajahi harga komoditas terbaru seperti tampilan dashboard admin,
-            lengkap dengan filter pasar dan pencarian komoditas.
+            {filterTempatUsahaId && filteredTempatUsaha
+              ? `Daftar komoditas yang dijual di ${filteredTempatUsaha.nama}.`
+              : "Jelajahi harga komoditas terbaru seperti tampilan dashboard admin, lengkap dengan filter pasar dan pencarian komoditas."}
           </p>
         </div>
 
         <Card>
-          <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <CardContent
+            className={`p-4 ${
+              filterTempatUsahaId ? "grid grid-cols-1" : "grid grid-cols-1 sm:grid-cols-2"
+            } gap-3`}
+          >
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/70" />
               <Input
@@ -123,19 +169,21 @@ export default function KomoditasPublicDashboard() {
                 className="pl-10 h-10"
               />
             </div>
-            <Select value={selectedPasar} onValueChange={setSelectedPasar}>
-              <SelectTrigger className="h-10">
-                <SelectValue placeholder="Semua Pasar" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua Pasar</SelectItem>
-                {pasar.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.nama}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {!filterTempatUsahaId && (
+              <Select value={selectedPasar} onValueChange={setSelectedPasar}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Semua Pasar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Pasar</SelectItem>
+                  {pasar.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.nama}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </CardContent>
         </Card>
 
