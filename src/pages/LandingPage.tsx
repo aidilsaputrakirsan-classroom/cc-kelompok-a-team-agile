@@ -73,15 +73,15 @@ export default function LandingPage() {
   const [carouselApi, setCarouselApi] = useState<CarouselApi | null>(null);
   const [heroApi, setHeroApi] = useState<CarouselApi | null>(null);
   const [activeStat, setActiveStat] = useState<StatsKey | null>(null);
-  const [selectedStatItemId, setSelectedStatItemId] = useState<string | null>(
-    null,
-  );
-  const [selectedKomoditasDetailId, setSelectedKomoditasDetailId] = useState<
-    string | null
-  >(null);
   const [selectedMapPasarId, setSelectedMapPasarId] = useState<string | null>(
     null,
   );
+  // New state untuk drill-down pasar/tempat usaha di stat panel
+  const [selectedPasarForDetail, setSelectedPasarForDetail] = useState<
+    string | null
+  >(null);
+  const [selectedTempatUsahaForDetail, setSelectedTempatUsahaForDetail] =
+    useState<string | null>(null);
   const [isMapSectionVisible, setIsMapSectionVisible] = useState(false);
   const [isTrendSelectorOpen, setIsTrendSelectorOpen] = useState(false);
   const [selectedTrendKomoditasIds, setSelectedTrendKomoditasIds] = useState<
@@ -161,7 +161,7 @@ export default function LandingPage() {
     });
 
     return () => observer.disconnect();
-  }, [query, activeStat, selectedStatItemId, selectedMapPasarId]);
+  }, [query, activeStat, selectedMapPasarId]);
 
   useEffect(() => {
     const element = mapSectionRef.current;
@@ -189,10 +189,6 @@ export default function LandingPage() {
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    setSelectedKomoditasDetailId(null);
-  }, [activeStat, selectedStatItemId]);
-
   const stats = [
     {
       key: "komoditas" as const,
@@ -218,7 +214,8 @@ export default function LandingPage() {
   ];
 
   const toggleStatPanel = (statKey: StatsKey) => {
-    setSelectedStatItemId(null);
+    setSelectedPasarForDetail(null);
+    setSelectedTempatUsahaForDetail(null);
     setActiveStat((prev) => (prev === statKey ? null : statKey));
   };
 
@@ -470,50 +467,95 @@ export default function LandingPage() {
     });
   }, [komoditas, hargaPelaporan]);
 
-  const selectedKomoditasCard = useMemo(() => {
-    if (activeStat !== "komoditas" || !selectedStatItemId) return null;
-    return overallCards.find(
-      (card) => card.komoditas.id === selectedStatItemId,
-    );
-  }, [activeStat, selectedStatItemId, overallCards]);
+  // All pasar cards untuk stat panel (langsung tampil tanpa perlu memilih item dulu)
+  const allPasarDetailCards = useMemo(() => {
+    return pasar
+      .filter((p) => p.is_active)
+      .map((p) => {
+        const komoditasInPasar = komoditas.filter((k) => {
+          const hasPrice = hargaPelaporan.some(
+            (h) => h.pasar_id === p.id && h.komoditas_id === k.id,
+          );
+          return hasPrice;
+        });
+        const totalKomoditas = komoditasInPasar.length;
+        const avgPrice =
+          totalKomoditas > 0
+            ? Math.round(
+                komoditasInPasar.reduce((sum, k) => {
+                  const latest = latestByKey[`${p.id}-${k.id}`];
+                  return sum + (latest?.harga_rata_rata ?? 0);
+                }, 0) / totalKomoditas,
+              )
+            : 0;
 
-  const komoditasDetailMap = useMemo(() => {
-    return overallCards.reduce<Record<string, (typeof overallCards)[number]>>(
-      (acc, card) => {
-        acc[card.komoditas.id] = card;
-        return acc;
-      },
-      {},
-    );
-  }, [overallCards]);
+        return {
+          id: p.id,
+          nama: p.nama,
+          alamat: p.alamat,
+          totalKomoditas,
+          avgPrice,
+        };
+      });
+  }, [pasar, komoditas, latestByKey, hargaPelaporan]);
 
-  const selectedPasarCards = useMemo(() => {
-    if (activeStat !== "pasar" || !selectedStatItemId) return [];
+  // All tempat usaha cards untuk stat panel
+  const allTempatUsahaDetailCards = useMemo(() => {
+    return tempatUsaha
+      .filter((t) => t.is_active)
+      .map((t) => {
+        const activeKomoditas = komoditasDijual
+          .filter((kd) => kd.tempat_usaha_id === t.id && kd.is_active)
+          .map((kd) => kd.komoditas_id);
+        const pasarItem = pasar.find((p) => p.id === t.pasar_id);
+
+        const avgPrice =
+          activeKomoditas.length > 0
+            ? Math.round(
+                activeKomoditas.reduce((sum, komId) => {
+                  const latest = latestByKey[`${t.pasar_id}-${komId}`];
+                  return sum + (latest?.harga_rata_rata ?? 0);
+                }, 0) / activeKomoditas.length,
+              )
+            : 0;
+
+        return {
+          id: t.id,
+          nama: t.nama,
+          pasar: pasarItem?.nama ?? "-",
+          totalKomoditas: activeKomoditas.length,
+          avgPrice,
+        };
+      });
+  }, [tempatUsaha, komoditasDijual, latestByKey, pasar]);
+
+  // Komoditas cards per pasar (ditampilkan ketika pasar dipilih)
+  const komoditasPerPasarCards = useMemo(() => {
+    if (!selectedPasarForDetail) return [];
 
     return komoditas
       .map((kom) => {
-        const latest = latestByKey[`${selectedStatItemId}-${kom.id}`];
+        const latest = latestByKey[`${selectedPasarForDetail}-${kom.id}`];
         if (!latest) return null;
 
         return {
-          key: `${selectedStatItemId}-${kom.id}`,
           komoditasId: kom.id,
-          title: kom.nama,
-          unit: kom.satuan_dasar,
-          image: kom.gambar,
-          price: latest.harga_rata_rata,
-          date: latest.tanggal,
+          nama: kom.nama,
+          satuan: kom.satuan_dasar,
+          gambar: kom.gambar,
+          harga: latest.harga_rata_rata,
+          tanggal: latest.tanggal,
         };
       })
-      .filter((item): item is NonNullable<typeof item> => item !== null)
-      .slice(0, 8);
-  }, [activeStat, selectedStatItemId, komoditas, latestByKey]);
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+  }, [selectedPasarForDetail, komoditas, latestByKey]);
 
-  const selectedTempatUsahaCards = useMemo(() => {
-    if (activeStat !== "tempatUsaha" || !selectedStatItemId) return [];
+  // Komoditas cards per tempat usaha (ditampilkan ketika tempat usaha dipilih)
+  const komoditasPerTempatUsahaCards = useMemo(() => {
+    if (!selectedTempatUsahaForDetail) return [];
 
     const selectedPlace = tempatUsaha.find(
-      (item) => item.id === selectedStatItemId,
+      (item) => item.id === selectedTempatUsahaForDetail,
     );
     if (!selectedPlace) return [];
 
@@ -529,25 +571,42 @@ export default function LandingPage() {
           latestByKey[`${selectedPlace.pasar_id}-${item.komoditas_id}`];
 
         return {
-          key: `${selectedPlace.id}-${item.komoditas_id}`,
           komoditasId: item.komoditas_id,
-          title: kom.nama,
-          unit: kom.satuan_dasar,
-          image: kom.gambar,
-          price: latest?.harga_rata_rata,
-          date: latest?.tanggal,
+          nama: kom.nama,
+          satuan: kom.satuan_dasar,
+          gambar: kom.gambar,
+          harga: latest?.harga_rata_rata,
+          tanggal: latest?.tanggal,
         };
       })
-      .filter((item): item is NonNullable<typeof item> => item !== null)
-      .slice(0, 8);
-  }, [
-    activeStat,
-    selectedStatItemId,
-    tempatUsaha,
-    komoditasDijual,
-    komoditas,
-    latestByKey,
-  ]);
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+  }, [selectedTempatUsahaForDetail, tempatUsaha, komoditasDijual, komoditas, latestByKey]);
+
+  const selectedKomoditasCard = useMemo(() => {
+    if (activeStat !== "komoditas") return null;
+    // This is kept for future use if needed, but not actively used in rendering
+    return null;
+  }, [activeStat]);
+
+  const komoditasDetailMap = useMemo(() => {
+    return overallCards.reduce<Record<string, (typeof overallCards)[number]>>(
+      (acc, card) => {
+        acc[card.komoditas.id] = card;
+        return acc;
+      },
+      {},
+    );
+  }, [overallCards]);
+
+  const selectedPasarCards = useMemo(() => {
+    // Legacy useMemo - not actively used in new rendering
+    return [];
+  }, []);
+
+  const selectedTempatUsahaCards = useMemo(() => {
+    // Legacy useMemo - not actively used in new rendering
+    return [];
+  }, []);
 
   const searchResults = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -632,30 +691,8 @@ export default function LandingPage() {
       .slice()
       .sort((a, b) => a.nama.localeCompare(b.nama));
 
-    return tus.map((tu) => {
-      const items = komoditasDijual
-        .filter((kd) => kd.tempat_usaha_id === tu.id && kd.is_active)
-        .map((kd) => {
-          const kom = komoditas.find((k) => k.id === kd.komoditas_id);
-          const latest =
-            latestByKey[`${selectedMapPasar.id}-${kd.komoditas_id}`];
-
-          return {
-            id: kd.id,
-            komoditasId: kd.komoditas_id,
-            nama: kom?.nama ?? "Komoditas",
-            satuan: kom?.satuan_dasar ?? "-",
-            harga: latest?.harga_rata_rata,
-          };
-        })
-        .sort((a, b) => a.nama.localeCompare(b.nama));
-
-      return {
-        ...tu,
-        komoditas: items,
-      };
-    });
-  }, [selectedMapPasar, tempatUsaha, komoditasDijual, komoditas, latestByKey]);
+    return tus;
+  }, [selectedMapPasar, tempatUsaha]);
 
   return (
     <div className="min-h-screen bg-background text-foreground animate-fade-in">
@@ -847,268 +884,280 @@ export default function LandingPage() {
                           : "Daftar Tempat Usaha"}
                     </p>
                     <h3 className="text-lg font-semibold">
-                      {activeStatList.length} item terdaftar
+                      {activeStat === "komoditas"
+                        ? overallCards.length
+                        : activeStat === "pasar"
+                          ? selectedPasarForDetail
+                            ? komoditasPerPasarCards.length
+                            : allPasarDetailCards.length
+                          : selectedTempatUsahaForDetail
+                            ? komoditasPerTempatUsahaCards.length
+                            : allTempatUsahaDetailCards.length}{" "}
+                      item
                     </h3>
                   </div>
-                  {selectedStatItemId && (
+                  {(selectedPasarForDetail || selectedTempatUsahaForDetail) && (
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setSelectedStatItemId(null)}
+                      onClick={() => {
+                        setSelectedPasarForDetail(null);
+                        setSelectedTempatUsahaForDetail(null);
+                      }}
                     >
                       Kembali ke daftar
                     </Button>
                   )}
                 </div>
 
-                {!selectedStatItemId && (
-                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                    {activeStatList.length > 0 ? (
-                      activeStatList.map((item, index) => (
-                        <button
-                          type="button"
-                          key={item.id}
-                          onClick={() => setSelectedStatItemId(item.id)}
-                          className={`text-left rounded-lg border p-3 interactive-smooth hover-tilt animate-fade-up ${
-                            selectedStatItemId === item.id
-                              ? "border-primary/60 bg-accent/20 shadow-md scale-[1.02]"
-                              : "border-border hover:border-primary/40 hover:bg-accent/30"
-                          }`}
+                {/* ===== KOMODITAS CARDS ===== */}
+                {activeStat === "komoditas" && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {overallCards.filter((c) => c.latest).length > 0 ? (
+                      overallCards
+                        .filter((c) => c.latest)
+                        .map((card, index) => (
+                          <Card
+                            key={card.komoditas.id}
+                            onClick={() =>
+                              navigate(`/public/komoditas/${card.komoditas.id}`)
+                            }
+                            className="h-full cursor-pointer hover:shadow-lg interactive-smooth hover:-translate-y-0.5 hover-tilt animate-fade-up card-enter"
+                            style={getStaggerStyle(index, 120)}
+                          >
+                            <CardContent className="p-4 space-y-3">
+                              <div className="flex items-center gap-3">
+                                <div className="flex-1 min-w-0 space-y-1.5">
+                                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                                    {card.komoditas.satuan_dasar}
+                                  </p>
+                                  <h3 className="font-semibold truncate">
+                                    {card.komoditas.nama}
+                                  </h3>
+                                  <p className="text-primary font-semibold">
+                                    Rp{" "}
+                                    {card.latest!.harga_rata_rata.toLocaleString(
+                                      "id-ID",
+                                    )}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    Update{" "}
+                                    {formatTanggal(card.latest!.tanggal)}
+                                  </p>
+                                </div>
+                                <div className="w-16 h-16 shrink-0 rounded-lg overflow-hidden border bg-muted/30">
+                                  {card.komoditas.gambar ? (
+                                    <img
+                                      src={card.komoditas.gambar}
+                                      alt={card.komoditas.nama}
+                                      className="h-full w-full object-cover"
+                                      loading="lazy"
+                                    />
+                                  ) : (
+                                    <div className="h-full w-full flex items-center justify-center text-muted-foreground">
+                                      <Package className="h-5 w-5" />
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Belum ada data harga komoditas.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* ===== PASAR CARDS ===== */}
+                {activeStat === "pasar" && !selectedPasarForDetail && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {allPasarDetailCards.length > 0 ? (
+                      allPasarDetailCards.map((pasar, index) => (
+                        <Card
+                          key={pasar.id}
+                          onClick={() => setSelectedPasarForDetail(pasar.id)}
+                          className="h-full cursor-pointer hover:shadow-lg interactive-smooth hover:-translate-y-0.5 hover-tilt animate-fade-up card-enter"
                           style={getStaggerStyle(index, 120)}
                         >
-                          <p className="font-medium leading-tight">
-                            {item.title}
-                          </p>
-                          {item.subtitle && (
-                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                              {item.subtitle}
-                            </p>
-                          )}
-                        </button>
+                          <CardContent className="p-4 space-y-3">
+                            <div className="flex items-center gap-3">
+                              <div className="flex-1 min-w-0 space-y-1.5">
+                                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                                  {pasar.totalKomoditas} Komoditas
+                                </p>
+                                <h3 className="font-semibold truncate">
+                                  {pasar.nama}
+                                </h3>
+                                <p className="text-xs text-muted-foreground line-clamp-2">
+                                  {pasar.alamat}
+                                </p>
+                              </div>
+                              <div className="w-16 h-16 shrink-0 rounded-lg overflow-hidden border bg-muted/30 flex items-center justify-center text-muted-foreground">
+                                <Store className="h-5 w-5" />
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
                       ))
                     ) : (
                       <p className="text-sm text-muted-foreground">
-                        Belum ada data aktif untuk kategori ini.
+                        Belum ada pasar aktif.
                       </p>
                     )}
                   </div>
                 )}
 
-                {selectedStatItemId &&
-                  activeStat === "komoditas" &&
-                  selectedKomoditasCard && (
-                    <div className="grid grid-cols-1 gap-4">
-                      <Card
-                        className="h-full hover:shadow-lg interactive-smooth hover:-translate-y-0.5 hover-tilt animate-fade-up card-enter"
-                        style={{ animationDelay: "120ms" }}
-                      >
-                        <CardContent className="p-5">
-                          <div className="flex items-stretch gap-4">
-                            <div className="flex-1 space-y-2">
+                {/* ===== KOMODITAS PER PASAR ===== */}
+                {activeStat === "pasar" && selectedPasarForDetail && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {komoditasPerPasarCards.length > 0 ? (
+                      komoditasPerPasarCards.map((card, index) => (
+                        <Card
+                          key={card.komoditasId}
+                          onClick={() =>
+                            navigate(
+                              `/public/komoditas/${card.komoditasId}`,
+                            )
+                          }
+                          className="h-full cursor-pointer hover:shadow-lg interactive-smooth hover:-translate-y-0.5 hover-tilt animate-fade-up card-enter"
+                          style={getStaggerStyle(index, 120)}
+                        >
+                          <CardContent className="p-4 space-y-3">
+                            <div className="flex items-center gap-3">
+                              <div className="flex-1 min-w-0 space-y-1.5">
+                                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                                  {card.satuan}
+                                </p>
+                                <h3 className="font-semibold truncate">
+                                  {card.nama}
+                                </h3>
+                                <p className="text-primary font-semibold">
+                                  Rp {card.harga.toLocaleString("id-ID")}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  Update {formatTanggal(card.tanggal)}
+                                </p>
+                              </div>
+                              <div className="w-16 h-16 shrink-0 rounded-lg overflow-hidden border bg-muted/30">
+                                {card.gambar ? (
+                                  <img
+                                    src={card.gambar}
+                                    alt={card.nama}
+                                    className="h-full w-full object-cover"
+                                    loading="lazy"
+                                  />
+                                ) : (
+                                  <div className="h-full w-full flex items-center justify-center text-muted-foreground">
+                                    <Package className="h-5 w-5" />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Belum ada data komoditas di pasar ini.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* ===== TEMPAT USAHA CARDS ===== */}
+                {activeStat === "tempatUsaha" && !selectedTempatUsahaForDetail && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {allTempatUsahaDetailCards.length > 0 ? (
+                      allTempatUsahaDetailCards.map((tu, index) => (
+                        <Card
+                          key={tu.id}
+                          onClick={() =>
+                            setSelectedTempatUsahaForDetail(tu.id)
+                          }
+                          className="h-full cursor-pointer hover:shadow-lg interactive-smooth hover:-translate-y-0.5 hover-tilt animate-fade-up card-enter"
+                          style={getStaggerStyle(index, 120)}
+                        >
+                          <CardContent className="p-4 space-y-3">
+                            <div className="space-y-1.5">
                               <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                                {selectedKomoditasCard.komoditas.satuan_dasar}
+                                {tu.pasar} • {tu.totalKomoditas} Komoditas
                               </p>
-                              <h3 className="text-lg font-semibold">
-                                {selectedKomoditasCard.komoditas.nama}
+                              <h3 className="font-semibold truncate">
+                                {tu.nama}
                               </h3>
-                              <p className="text-xl font-semibold text-primary">
-                                {selectedKomoditasCard.avgPrice > 0
-                                  ? `Rp ${selectedKomoditasCard.avgPrice.toLocaleString("id-ID")}`
-                                  : "Belum ada data"}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {selectedKomoditasCard.latest
-                                  ? `Data terakhir ${formatTanggal(selectedKomoditasCard.latest.tanggal)}`
-                                  : "Belum ada pembaruan"}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                Rentang:{" "}
-                                {selectedKomoditasCard.minPrice > 0
-                                  ? `Rp ${selectedKomoditasCard.minPrice.toLocaleString("id-ID")}`
-                                  : "-"}{" "}
-                                -{" "}
-                                {selectedKomoditasCard.maxPrice > 0
-                                  ? `Rp ${selectedKomoditasCard.maxPrice.toLocaleString("id-ID")}`
-                                  : "-"}
-                              </p>
                             </div>
-                            <div className="w-24 sm:w-28 shrink-0 rounded-xl overflow-hidden border bg-muted/30">
-                              {selectedKomoditasCard.komoditas.gambar ? (
-                                <img
-                                  src={selectedKomoditasCard.komoditas.gambar}
-                                  alt={selectedKomoditasCard.komoditas.nama}
-                                  className="h-full w-full object-cover"
-                                  loading="lazy"
-                                />
-                              ) : (
-                                <div className="h-full min-h-24 flex items-center justify-center text-muted-foreground">
-                                  <Package className="h-8 w-8" />
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  )}
-
-                {selectedStatItemId && activeStat === "pasar" && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {selectedPasarCards.length > 0 ? (
-                      selectedPasarCards.map((card, index) => {
-                        const isSelected =
-                          selectedKomoditasDetailId === card.komoditasId;
-                        const detail = komoditasDetailMap[card.komoditasId];
-
-                        return (
-                          <Card
-                            key={card.key}
-                            onClick={() =>
-                              setSelectedKomoditasDetailId((prev) =>
-                                prev === card.komoditasId
-                                  ? null
-                                  : card.komoditasId,
-                              )
-                            }
-                            className={`h-full cursor-pointer hover:shadow-lg interactive-smooth hover:-translate-y-0.5 hover-tilt animate-fade-up card-enter ${
-                              isSelected ? "border-primary/50 bg-accent/10" : ""
-                            }`}
-                            style={getStaggerStyle(index, 120)}
-                          >
-                            <CardContent className="p-4 space-y-3">
-                              <div className="flex items-center gap-3">
-                                <div className="flex-1 min-w-0 space-y-1.5">
-                                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                                    {card.unit}
-                                  </p>
-                                  <h3 className="font-semibold truncate">
-                                    {card.title}
-                                  </h3>
-                                  <p className="text-primary font-semibold">
-                                    Rp {card.price.toLocaleString("id-ID")}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    Update {formatTanggal(card.date)}
-                                  </p>
-                                </div>
-                                <div className="w-16 h-16 shrink-0 rounded-lg overflow-hidden border bg-muted/30">
-                                  {card.image ? (
-                                    <img
-                                      src={card.image}
-                                      alt={card.title}
-                                      className="h-full w-full object-cover"
-                                      loading="lazy"
-                                    />
-                                  ) : (
-                                    <div className="h-full w-full flex items-center justify-center text-muted-foreground">
-                                      <Package className="h-5 w-5" />
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                              {isSelected && detail && (
-                                <div className="pt-2 border-t text-xs text-muted-foreground space-y-1">
-                                  <p>
-                                    Rata-rata keseluruhan: Rp{" "}
-                                    {detail.avgPrice.toLocaleString("id-ID")}
-                                  </p>
-                                  <p>
-                                    Rentang harga: Rp{" "}
-                                    {detail.minPrice.toLocaleString("id-ID")} -
-                                    Rp {detail.maxPrice.toLocaleString("id-ID")}
-                                  </p>
-                                </div>
-                              )}
-                            </CardContent>
-                          </Card>
-                        );
-                      })
+                          </CardContent>
+                        </Card>
+                      ))
                     ) : (
                       <p className="text-sm text-muted-foreground">
-                        Belum ada data harga komoditas pada pasar ini.
+                        Belum ada tempat usaha aktif.
                       </p>
                     )}
                   </div>
                 )}
 
-                {selectedStatItemId && activeStat === "tempatUsaha" && (
+                {/* ===== KOMODITAS PER TEMPAT USAHA ===== */}
+                {activeStat === "tempatUsaha" && selectedTempatUsahaForDetail && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {selectedTempatUsahaCards.length > 0 ? (
-                      selectedTempatUsahaCards.map((card, index) => {
-                        const isSelected =
-                          selectedKomoditasDetailId === card.komoditasId;
-                        const detail = komoditasDetailMap[card.komoditasId];
-
-                        return (
-                          <Card
-                            key={card.key}
-                            onClick={() =>
-                              setSelectedKomoditasDetailId((prev) =>
-                                prev === card.komoditasId
-                                  ? null
-                                  : card.komoditasId,
-                              )
-                            }
-                            className={`h-full cursor-pointer hover:shadow-lg interactive-smooth hover:-translate-y-0.5 hover-tilt animate-fade-up card-enter ${
-                              isSelected ? "border-primary/50 bg-accent/10" : ""
-                            }`}
-                            style={getStaggerStyle(index, 120)}
-                          >
-                            <CardContent className="p-4 space-y-3">
-                              <div className="flex items-center gap-3">
-                                <div className="flex-1 min-w-0 space-y-1.5">
-                                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                                    {card.unit}
-                                  </p>
-                                  <h3 className="font-semibold truncate">
-                                    {card.title}
-                                  </h3>
-                                  <p className="text-primary font-semibold">
-                                    {card.price
-                                      ? `Rp ${card.price.toLocaleString("id-ID")}`
-                                      : "Belum ada harga"}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {card.date
-                                      ? `Update ${formatTanggal(card.date)}`
-                                      : "Belum ada pembaruan"}
-                                  </p>
-                                </div>
-                                <div className="w-16 h-16 shrink-0 rounded-lg overflow-hidden border bg-muted/30">
-                                  {card.image ? (
-                                    <img
-                                      src={card.image}
-                                      alt={card.title}
-                                      className="h-full w-full object-cover"
-                                      loading="lazy"
-                                    />
+                    {komoditasPerTempatUsahaCards.length > 0 ? (
+                      komoditasPerTempatUsahaCards.map((card, index) => (
+                        <Card
+                          key={card.komoditasId}
+                          onClick={() =>
+                            navigate(
+                              `/public/komoditas/${card.komoditasId}`,
+                            )
+                          }
+                          className="h-full cursor-pointer hover:shadow-lg interactive-smooth hover:-translate-y-0.5 hover-tilt animate-fade-up card-enter"
+                          style={getStaggerStyle(index, 120)}
+                        >
+                          <CardContent className="p-4 space-y-3">
+                            <div className="flex items-center gap-3">
+                              <div className="flex-1 min-w-0 space-y-1.5">
+                                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                                  {card.satuan}
+                                </p>
+                                <h3 className="font-semibold truncate">
+                                  {card.nama}
+                                </h3>
+                                <p className="text-primary font-semibold">
+                                  {card.harga ? (
+                                    <>Rp {card.harga.toLocaleString("id-ID")}</>
                                   ) : (
-                                    <div className="h-full w-full flex items-center justify-center text-muted-foreground">
-                                      <Package className="h-5 w-5" />
-                                    </div>
+                                    <>Belum ada harga</>
                                   )}
-                                </div>
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {card.tanggal
+                                    ? `Update ${formatTanggal(card.tanggal)}`
+                                    : "Belum ada update"}
+                                </p>
                               </div>
-                              {isSelected && detail && (
-                                <div className="pt-2 border-t text-xs text-muted-foreground space-y-1">
-                                  <p>
-                                    Rata-rata keseluruhan: Rp{" "}
-                                    {detail.avgPrice.toLocaleString("id-ID")}
-                                  </p>
-                                  <p>
-                                    Rentang harga: Rp{" "}
-                                    {detail.minPrice.toLocaleString("id-ID")} -
-                                    Rp {detail.maxPrice.toLocaleString("id-ID")}
-                                  </p>
-                                </div>
-                              )}
-                            </CardContent>
-                          </Card>
-                        );
-                      })
+                              <div className="w-16 h-16 shrink-0 rounded-lg overflow-hidden border bg-muted/30">
+                                {card.gambar ? (
+                                  <img
+                                    src={card.gambar}
+                                    alt={card.nama}
+                                    className="h-full w-full object-cover"
+                                    loading="lazy"
+                                  />
+                                ) : (
+                                  <div className="h-full w-full flex items-center justify-center text-muted-foreground">
+                                    <Package className="h-5 w-5" />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))
                     ) : (
                       <p className="text-sm text-muted-foreground">
-                        Belum ada data komoditas aktif pada tempat usaha ini.
+                        Belum ada data komoditas pada tempat usaha ini.
                       </p>
                     )}
                   </div>
@@ -1773,41 +1822,53 @@ export default function LandingPage() {
                       )}
 
                       {selectedMapPasarDetails.map((tu, index) => (
-                        <div
+                        <button
                           key={tu.id}
-                          className="rounded-xl border p-3 space-y-2 interactive-smooth hover:border-primary/40 hover:shadow-sm animate-fade-up card-enter"
+                          onClick={() =>
+                            navigate("/public/komoditas", {
+                              state: { filterTempatUsahaId: tu.id },
+                            })
+                          }
+                          className="rounded-lg border p-2.5 space-y-2 interactive-smooth hover:border-primary/50 hover:shadow-md hover:bg-accent/5 animate-fade-up card-enter text-left w-full transition-colors"
                           style={getStaggerStyle(index, 320)}
                         >
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="font-medium">{tu.nama}</p>
-                            <Link
-                              to={`/public/tempat-usaha/${tu.id}`}
-                              className="text-xs text-primary inline-flex items-center gap-1"
-                            >
-                              Detail <ArrowRight className="h-3.5 w-3.5" />
-                            </Link>
+                          <div>
+                            <p className="font-semibold text-sm leading-tight">
+                              {tu.nama}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {selectedMapPasar.nama}
+                            </p>
                           </div>
 
-                          {tu.komoditas.length > 0 ? (
-                            <div className="flex flex-wrap gap-1.5">
-                              {tu.komoditas.map((item) => (
-                                <span
-                                  key={item.id}
-                                  className="inline-flex items-center rounded-full border px-2 py-1 text-[11px]"
-                                >
-                                  {item.nama} ({item.satuan})
-                                  {item.harga
-                                    ? ` • Rp ${item.harga.toLocaleString("id-ID")}`
-                                    : ""}
+                          <div className="space-y-1 text-xs">
+                            {tu.nama_pemilik && (
+                              <p className="text-foreground">
+                                <span className="text-muted-foreground">
+                                  Pemilik:{" "}
                                 </span>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-xs text-muted-foreground">
-                              Belum ada komoditas aktif.
-                            </p>
-                          )}
-                        </div>
+                                {tu.nama_pemilik}
+                              </p>
+                            )}
+                            {tu.nomor_narahubung && (
+                              <p className="text-foreground">
+                                <span className="text-muted-foreground">
+                                  HP:{" "}
+                                </span>
+                                <span className="text-primary font-medium">
+                                  {tu.nomor_narahubung}
+                                </span>
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="flex items-center justify-between pt-0.5">
+                            <span className="text-[11px] text-muted-foreground">
+                              Klik untuk lihat komoditas
+                            </span>
+                            <ArrowRight className="h-3 w-3 text-primary" />
+                          </div>
+                        </button>
                       ))}
                     </div>
                   </CardContent>

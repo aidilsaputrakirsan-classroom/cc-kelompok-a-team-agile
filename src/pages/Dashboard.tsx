@@ -37,9 +37,16 @@ export default function DashboardPage() {
   const [selectedTrendIds, setSelectedTrendIds] = useState<string[]>([]);
 
   /* ===== Statistik ringkasan ===== */
+  const activePasarCount = useMemo(() => {
+    // Hitung pasar yang memiliki data harga pelaporan
+    const pasarWithData = new Set(hargaPelaporan.map((h) => h.pasar_id));
+    return pasar.filter((p) => pasarWithData.has(p.id)).length;
+  }, [pasar, hargaPelaporan]);
+
   const stats = [
     {
       label: "Pasar Aktif",
+      value: activePasarCount,
       icon: Store,
       color: "text-accent",
     },
