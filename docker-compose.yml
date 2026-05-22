@@ -22,41 +22,6 @@ services:
     networks:
       - sihp-network
 
-  migrate:
-    build:
-      context: .
-      target: dev
-    container_name: sihp-migrate
-    depends_on:
-      db:
-        condition: service_healthy
-    working_dir: /app/migration
-    env_file:
-      - .env
-    command: >
-      sh -lc "go install github.com/rubenv/sql-migrate/...@latest && make migrate-up env=local"
-    restart: "no"
-    networks:
-      - sihp-network
-
-  seed-admin:
-    build:
-      context: .
-      target: dev
-    container_name: sihp-seed-admin
-    depends_on:
-      db:
-        condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
-    working_dir: /app
-    env_file:
-      - .env
-    command: ["go", "run", "./cmd/seed-admin"]
-    restart: "no"
-    networks:
-      - sihp-network
-
   app:
     build:
       context: .
