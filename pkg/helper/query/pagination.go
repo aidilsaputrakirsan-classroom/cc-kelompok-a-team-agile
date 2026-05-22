@@ -1,8 +1,8 @@
 package queryhelper
 
 import (
-	entitybase "github.com/alxhtp/monogo/internal/entity/base"
-	dtobase "github.com/alxhtp/monogo/pkg/dto/base"
+	entitybase "github.com/thdoikn/sihp-be/internal/entity/base"
+	dtobase "github.com/thdoikn/sihp-be/pkg/dto/base"
 )
 
 func SerializeFilterPaginationDtoToEntity(

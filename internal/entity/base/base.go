@@ -3,8 +3,8 @@ package entitybase
 import (
 	"time"
 
-	databasehelper "github.com/alxhtp/monogo/pkg/helper/database"
 	"github.com/google/uuid"
+	databasehelper "github.com/thdoikn/sihp-be/pkg/helper/database"
 	"gorm.io/gorm"
 )
 

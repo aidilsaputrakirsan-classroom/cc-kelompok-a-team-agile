@@ -63,7 +63,7 @@ Monogo is a Go-based monolithic backend that provides a RESTful API on port **80
 
 1. **Clone the repository:**
    ```sh
-   git clone https://github.com/alxhtp/monogo.git
+   git clone https://github.com/thdoikn/sihp-be.git
    cd monogo
    ```
 2. **Set up environment variables:**
@@ -216,3 +216,38 @@ curl -X DELETE http://localhost:8080/v1/users/{id}
 ## License
 
 This project is licensed under the [Apache 2.0 License](http://www.apache.org/licenses/LICENSE-2.0.html).
+
+## SIHP Setup
+
+### Required env vars
+
+In addition to existing DB/JWT vars, set:
+
+- `ADMIN_EMAIL`
+- `ADMIN_PASSWORD`
+- `ADMIN_NAME` (optional, default `Administrator`)
+
+### Run SIHP migrations
+
+```sh
+cd migration
+make migrate-up env=local
+```
+
+### Seed initial admin
+
+```sh
+go run ./cmd/seed-admin
+```
+
+### Start server
+
+```sh
+make start
+```
+
+### Auth model
+
+- Public endpoints: `/v1/public/*`
+- Login endpoint: `POST /v1/auth/login`
+- Protected endpoints: all other `/v1/*` routes require `Authorization: Bearer <token>`

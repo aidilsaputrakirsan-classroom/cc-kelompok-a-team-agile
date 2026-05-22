@@ -1,53 +1,224 @@
 basePath: /v1
 definitions:
-  github_com_alxhtp_monogo_pkg_dto.ReqCreateUser:
+  github_com_thdoikn_sihp-be_pkg_dto.ReqAuthLogin:
     properties:
       email:
         type: string
-      metadata:
-        $ref: '#/definitions/github_com_alxhtp_monogo_pkg_dto.UserMetadata'
-      name:
+      password:
         type: string
     required:
     - email
-    - name
+    - password
     type: object
-  github_com_alxhtp_monogo_pkg_dto.ReqUpdateUser:
+  github_com_thdoikn_sihp-be_pkg_dto.ReqCreateHargaRutin:
     properties:
-      email:
+      harga:
+        minimum: 1
+        type: integer
+      id_komoditas:
         type: string
-      metadata:
-        $ref: '#/definitions/github_com_alxhtp_monogo_pkg_dto.UserMetadata'
-      name:
+      id_pengumpulan_data:
+        type: string
+      id_tempat_usaha:
+        type: string
+      kelas_komoditas:
+        type: string
+    required:
+    - harga
+    - id_komoditas
+    - id_pengumpulan_data
+    - id_tempat_usaha
+    - kelas_komoditas
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ReqCreateKomoditas:
+    properties:
+      nama:
+        type: string
+      satuan:
+        type: string
+    required:
+    - nama
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ReqCreateKomoditasDijual:
+    properties:
+      id_komoditas:
+        type: string
+      id_tempat_usaha:
+        type: string
+    required:
+    - id_komoditas
+    - id_tempat_usaha
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ReqCreatePasar:
+    properties:
+      alamat:
+        type: string
+      nama:
+        type: string
+    required:
+    - nama
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ReqCreatePengumpulanData:
+    properties:
+      catatan:
+        type: string
+      id_pasar:
+        type: string
+      tanggal:
+        type: string
+    required:
+    - id_pasar
+    - tanggal
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ReqCreateTempatUsaha:
+    properties:
+      id_pasar:
+        type: string
+      nama:
+        type: string
+      pemilik:
+        type: string
+    required:
+    - id_pasar
+    - nama
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ReqUpdateHargaRutin:
+    properties:
+      harga:
+        type: integer
+      id_tempat_usaha:
+        type: string
+      kelas_komoditas:
+        type: string
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ReqUpdateKomoditas:
+    properties:
+      nama:
+        type: string
+      satuan:
+        type: string
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ReqUpdateKomoditasDijual:
+    properties:
+      status:
+        type: integer
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ReqUpdatePasar:
+    properties:
+      alamat:
+        type: string
+      nama:
         type: string
       status:
         type: integer
     type: object
-  github_com_alxhtp_monogo_pkg_dto.ResUser:
+  github_com_thdoikn_sihp-be_pkg_dto.ReqUpdatePengumpulanData:
+    properties:
+      catatan:
+        type: string
+      tanggal:
+        type: string
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ReqUpdateTempatUsaha:
+    properties:
+      id_pasar:
+        type: string
+      nama:
+        type: string
+      pemilik:
+        type: string
+      status:
+        type: integer
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResAdmin:
     properties:
       email:
         type: string
       id:
         type: string
-      metadata:
-        $ref: '#/definitions/github_com_alxhtp_monogo_pkg_dto.UserMetadata'
       name:
         type: string
-      status:
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResAuthLogin:
+    properties:
+      token:
+        $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResAuthToken'
+      user:
+        $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResAdmin'
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResAuthLoginEnvelope:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResAuthLogin'
+      message:
+        type: string
+      stacktrace:
+        type: string
+      success:
+        type: boolean
+    required:
+    - code
+    - message
+    - success
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResAuthToken:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        type: integer
+      token_type:
+        type: string
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResFinalizePengumpulanData:
+    properties:
+      finalized_komoditas_count:
         type: integer
     type: object
-  github_com_alxhtp_monogo_pkg_dto.ResUserList:
+  github_com_thdoikn_sihp-be_pkg_dto.ResFinalizePengumpulanDataEnvelope:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResFinalizePengumpulanData'
+      message:
+        type: string
+      stacktrace:
+        type: string
+      success:
+        type: boolean
+    required:
+    - code
+    - message
+    - success
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResHargaPelaporan:
+    properties:
+      harga:
+        type: integer
+      id:
+        type: string
+      id_komoditas:
+        type: string
+      id_pengumpulan_data:
+        type: string
+      tanggal:
+        type: string
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResHargaPelaporanList:
     properties:
       code:
         type: integer
       data:
         items:
-          $ref: '#/definitions/github_com_alxhtp_monogo_pkg_dto.ResUser'
+          $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResHargaPelaporan'
         type: array
       message:
         type: string
       page:
-        $ref: '#/definitions/github_com_alxhtp_monogo_pkg_dto_base.BasePagination'
+        $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto_base.BasePagination'
       stacktrace:
         type: string
       success:
@@ -57,12 +228,12 @@ definitions:
     - message
     - success
     type: object
-  github_com_alxhtp_monogo_pkg_dto.ResUserSingle:
+  github_com_thdoikn_sihp-be_pkg_dto.ResHargaPelaporanSingle:
     properties:
       code:
         type: integer
       data:
-        $ref: '#/definitions/github_com_alxhtp_monogo_pkg_dto.ResUser'
+        $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResHargaPelaporan'
       message:
         type: string
       stacktrace:
@@ -74,24 +245,467 @@ definitions:
     - message
     - success
     type: object
-  github_com_alxhtp_monogo_pkg_dto.UserMetadata:
+  github_com_thdoikn_sihp-be_pkg_dto.ResHargaRutin:
     properties:
-      address:
-        maxLength: 255
+      harga:
+        type: integer
+      id:
         type: string
-      phone:
+      id_komoditas:
         type: string
-      sex:
-        enum:
-        - male
-        - female
+      id_pengumpulan_data:
         type: string
-    required:
-    - address
-    - phone
-    - sex
+      id_tempat_usaha:
+        type: string
+      kelas_komoditas:
+        type: string
     type: object
-  github_com_alxhtp_monogo_pkg_dto_base.BasePagination:
+  github_com_thdoikn_sihp-be_pkg_dto.ResHargaRutinList:
+    properties:
+      code:
+        type: integer
+      data:
+        items:
+          $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResHargaRutin'
+        type: array
+      message:
+        type: string
+      page:
+        $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto_base.BasePagination'
+      stacktrace:
+        type: string
+      success:
+        type: boolean
+    required:
+    - code
+    - message
+    - success
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResHargaRutinSingle:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResHargaRutin'
+      message:
+        type: string
+      stacktrace:
+        type: string
+      success:
+        type: boolean
+    required:
+    - code
+    - message
+    - success
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResKomoditas:
+    properties:
+      id:
+        type: string
+      nama:
+        type: string
+      satuan:
+        type: string
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasDijual:
+    properties:
+      id:
+        type: string
+      id_komoditas:
+        type: string
+      id_tempat_usaha:
+        type: string
+      status:
+        type: integer
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasDijualList:
+    properties:
+      code:
+        type: integer
+      data:
+        items:
+          $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasDijual'
+        type: array
+      message:
+        type: string
+      page:
+        $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto_base.BasePagination'
+      stacktrace:
+        type: string
+      success:
+        type: boolean
+    required:
+    - code
+    - message
+    - success
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasDijualSingle:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasDijual'
+      message:
+        type: string
+      stacktrace:
+        type: string
+      success:
+        type: boolean
+    required:
+    - code
+    - message
+    - success
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasList:
+    properties:
+      code:
+        type: integer
+      data:
+        items:
+          $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResKomoditas'
+        type: array
+      message:
+        type: string
+      page:
+        $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto_base.BasePagination'
+      stacktrace:
+        type: string
+      success:
+        type: boolean
+    required:
+    - code
+    - message
+    - success
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasSingle:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResKomoditas'
+      message:
+        type: string
+      stacktrace:
+        type: string
+      success:
+        type: boolean
+    required:
+    - code
+    - message
+    - success
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResPasar:
+    properties:
+      alamat:
+        type: string
+      id:
+        type: string
+      nama:
+        type: string
+      status:
+        type: integer
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResPasarList:
+    properties:
+      code:
+        type: integer
+      data:
+        items:
+          $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPasar'
+        type: array
+      message:
+        type: string
+      page:
+        $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto_base.BasePagination'
+      stacktrace:
+        type: string
+      success:
+        type: boolean
+    required:
+    - code
+    - message
+    - success
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResPasarSingle:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPasar'
+      message:
+        type: string
+      stacktrace:
+        type: string
+      success:
+        type: boolean
+    required:
+    - code
+    - message
+    - success
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResPengumpulanData:
+    properties:
+      catatan:
+        type: string
+      id:
+        type: string
+      id_pasar:
+        type: string
+      status:
+        type: integer
+      tanggal:
+        type: string
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResPengumpulanDataList:
+    properties:
+      code:
+        type: integer
+      data:
+        items:
+          $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPengumpulanData'
+        type: array
+      message:
+        type: string
+      page:
+        $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto_base.BasePagination'
+      stacktrace:
+        type: string
+      success:
+        type: boolean
+    required:
+    - code
+    - message
+    - success
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResPengumpulanDataSingle:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPengumpulanData'
+      message:
+        type: string
+      stacktrace:
+        type: string
+      success:
+        type: boolean
+    required:
+    - code
+    - message
+    - success
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResPublicHargaStat:
+    properties:
+      harga_rata_rata:
+        type: number
+      tanggal:
+        type: string
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResPublicKomoditasDetail:
+    properties:
+      avg_nd:
+        type: number
+      days:
+        type: integer
+      komoditas:
+        $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResKomoditas'
+      latest:
+        $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPublicHargaStat'
+      max_nd:
+        type: number
+      min_nd:
+        type: number
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResPublicKomoditasDetailEnvelope:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPublicKomoditasDetail'
+      message:
+        type: string
+      stacktrace:
+        type: string
+      success:
+        type: boolean
+    required:
+    - code
+    - message
+    - success
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResPublicOverview:
+    properties:
+      komoditas_count:
+        type: integer
+      pasar_active_count:
+        type: integer
+      tempat_usaha_active_count:
+        type: integer
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResPublicOverviewEnvelope:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPublicOverview'
+      message:
+        type: string
+      stacktrace:
+        type: string
+      success:
+        type: boolean
+    required:
+    - code
+    - message
+    - success
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResPublicPasarDetail:
+    properties:
+      page:
+        $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto_base.BasePagination'
+      pasar:
+        $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPasar'
+      tempat_usaha:
+        items:
+          $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResTempatUsaha'
+        type: array
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResPublicPasarDetailEnvelope:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPublicPasarDetail'
+      message:
+        type: string
+      stacktrace:
+        type: string
+      success:
+        type: boolean
+    required:
+    - code
+    - message
+    - success
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResPublicTempatUsahaDetail:
+    properties:
+      komoditas:
+        items:
+          $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPublicTempatUsahaKomoditas'
+        type: array
+      page:
+        $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto_base.BasePagination'
+      pasar:
+        $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPasar'
+      tempat_usaha:
+        $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResTempatUsaha'
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResPublicTempatUsahaDetailEnvelope:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPublicTempatUsahaDetail'
+      message:
+        type: string
+      stacktrace:
+        type: string
+      success:
+        type: boolean
+    required:
+    - code
+    - message
+    - success
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResPublicTempatUsahaKomoditas:
+    properties:
+      id:
+        type: string
+      latest:
+        $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPublicHargaStat'
+      nama:
+        type: string
+      satuan:
+        type: string
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResPublicTrendEnvelope:
+    properties:
+      code:
+        type: integer
+      data:
+        items:
+          $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPublicTrendPoint'
+        type: array
+      message:
+        type: string
+      stacktrace:
+        type: string
+      success:
+        type: boolean
+    required:
+    - code
+    - message
+    - success
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResPublicTrendPoint:
+    properties:
+      harga_rata_rata:
+        type: number
+      tanggal:
+        type: string
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResTempatUsaha:
+    properties:
+      id:
+        type: string
+      id_pasar:
+        type: string
+      nama:
+        type: string
+      pemilik:
+        type: string
+      status:
+        type: integer
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResTempatUsahaList:
+    properties:
+      code:
+        type: integer
+      data:
+        items:
+          $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResTempatUsaha'
+        type: array
+      message:
+        type: string
+      page:
+        $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto_base.BasePagination'
+      stacktrace:
+        type: string
+      success:
+        type: boolean
+    required:
+    - code
+    - message
+    - success
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto.ResTempatUsahaSingle:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResTempatUsaha'
+      message:
+        type: string
+      stacktrace:
+        type: string
+      success:
+        type: boolean
+    required:
+    - code
+    - message
+    - success
+    type: object
+  github_com_thdoikn_sihp-be_pkg_dto_base.BasePagination:
     properties:
       count:
         type: integer
@@ -107,21 +721,6 @@ definitions:
     - offset
     - order_by
     type: object
-  github_com_alxhtp_monogo_pkg_dto_base.BaseRes:
-    properties:
-      code:
-        type: integer
-      message:
-        type: string
-      stacktrace:
-        type: string
-      success:
-        type: boolean
-    required:
-    - code
-    - message
-    - success
-    type: object
 externalDocs:
   description: OpenAPI
   url: https://swagger.io/resources/open-api/
@@ -130,53 +729,39 @@ info:
     email: support@swagger.io
     name: API Support
     url: http://www.swagger.io/support
-  description: Monogo API Collection
+  description: SIHP API Collection
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   termsOfService: http://swagger.io/terms/
-  title: Monogo API
+  title: SIHP API
   version: "1.0"
 paths:
-  /users:
+  /admin/harga-pelaporan:
     get:
-      consumes:
-      - application/json
-      description: Get users by filter
+      description: Get harga pelaporan list with filters
       parameters:
-      - description: User IDs, comma separated uuids
+      - description: Pasar ID
         in: query
-        name: ids
+        name: id_pasar
         type: string
-      - description: Name
+      - description: Komoditas ID
         in: query
-        name: name
+        name: id_komoditas
         type: string
-      - description: Email
+      - description: From date
         in: query
-        name: email
+        name: from
         type: string
-      - description: Status
+      - description: To date
+        in: query
+        name: to
+        type: string
+      - description: Pengumpulan data status
         in: query
         name: status
         type: integer
-      - description: Sex
-        in: query
-        name: sex
-        type: string
-      - description: Address
-        in: query
-        name: address
-        type: string
-      - description: Phone
-        in: query
-        name: phone
-        type: string
-      - description: Include Deleted
-        in: query
-        name: include-deleted
-        type: boolean
-      - description: Show Count
+      - description: Show count
         in: query
         name: show-count
         type: boolean
@@ -188,7 +773,7 @@ paths:
         in: query
         name: limit
         type: integer
-      - description: 'Order By, default: +created_at'
+      - description: Order by
         in: query
         name: order-by
         type: string
@@ -198,38 +783,105 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_alxhtp_monogo_pkg_dto.ResUserList'
-      summary: Get users by filter
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResHargaPelaporanList'
+      security:
+      - Authorization: []
+      summary: Get harga pelaporan list
       tags:
-      - User
+      - Harga Pelaporan
+  /admin/harga-pelaporan/{id}:
+    get:
+      description: Get harga pelaporan detail by ID
+      parameters:
+      - description: Harga pelaporan ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResHargaPelaporanSingle'
+      security:
+      - Authorization: []
+      summary: Get harga pelaporan by ID
+      tags:
+      - Harga Pelaporan
+  /admin/harga-rutin:
+    get:
+      description: Get harga rutin list with filters
+      parameters:
+      - description: Pengumpulan data ID
+        in: query
+        name: id_pengumpulan_data
+        type: string
+      - description: Tempat usaha ID
+        in: query
+        name: id_tempat_usaha
+        type: string
+      - description: Komoditas ID
+        in: query
+        name: id_komoditas
+        type: string
+      - description: Show count
+        in: query
+        name: show-count
+        type: boolean
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Order by
+        in: query
+        name: order-by
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResHargaRutinList'
+      security:
+      - Authorization: []
+      summary: Get harga rutin list
+      tags:
+      - Harga Rutin
     post:
       consumes:
       - application/json
-      description: Create a new user
+      description: Create harga rutin row for draft batch
       parameters:
-      - description: User
+      - description: Create harga rutin payload
         in: body
-        name: user
+        name: payload
         required: true
         schema:
-          $ref: '#/definitions/github_com_alxhtp_monogo_pkg_dto.ReqCreateUser'
+          $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ReqCreateHargaRutin'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_alxhtp_monogo_pkg_dto.ResUserSingle'
-      summary: Create a new user
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResHargaRutinSingle'
+      security:
+      - Authorization: []
+      summary: Create harga rutin
       tags:
-      - User
-  /users/{id}:
+      - Harga Rutin
+  /admin/harga-rutin/{id}:
     delete:
-      consumes:
-      - application/json
-      description: Delete a user
+      description: Delete harga rutin by ID for draft batch
       parameters:
-      - description: User ID
+      - description: Harga rutin ID
         in: path
         name: id
         required: true
@@ -240,16 +892,16 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_alxhtp_monogo_pkg_dto_base.BaseRes'
-      summary: Delete a user
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResHargaRutinSingle'
+      security:
+      - Authorization: []
+      summary: Delete harga rutin
       tags:
-      - User
+      - Harga Rutin
     get:
-      consumes:
-      - application/json
-      description: Get a user by ID
+      description: Get harga rutin detail by ID
       parameters:
-      - description: User ID
+      - description: Harga rutin ID
         in: path
         name: id
         required: true
@@ -260,36 +912,1014 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_alxhtp_monogo_pkg_dto.ResUserSingle'
-      summary: Get a user by ID
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResHargaRutinSingle'
+      security:
+      - Authorization: []
+      summary: Get harga rutin by ID
       tags:
-      - User
+      - Harga Rutin
     put:
       consumes:
       - application/json
-      description: Update a user
+      description: Update harga rutin by ID for draft batch
       parameters:
-      - description: User ID
+      - description: Harga rutin ID
         in: path
         name: id
         required: true
         type: string
-      - description: User
+      - description: Update harga rutin payload
         in: body
-        name: user
+        name: payload
         required: true
         schema:
-          $ref: '#/definitions/github_com_alxhtp_monogo_pkg_dto.ReqUpdateUser'
+          $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ReqUpdateHargaRutin'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_alxhtp_monogo_pkg_dto.ResUserSingle'
-      summary: Update a user
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResHargaRutinSingle'
+      security:
+      - Authorization: []
+      summary: Update harga rutin
       tags:
-      - User
+      - Harga Rutin
+  /admin/komoditas:
+    get:
+      description: Get komoditas list with filters
+      parameters:
+      - description: Komoditas name
+        in: query
+        name: name
+        type: string
+      - description: Tempat usaha ID
+        in: query
+        name: id_tempat_usaha
+        type: string
+      - description: Pasar ID
+        in: query
+        name: id_pasar
+        type: string
+      - description: Show count
+        in: query
+        name: show-count
+        type: boolean
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Order by
+        in: query
+        name: order-by
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasList'
+      security:
+      - Authorization: []
+      summary: Get komoditas list
+      tags:
+      - Komoditas
+    post:
+      consumes:
+      - application/json
+      description: Create new komoditas
+      parameters:
+      - description: Create komoditas payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ReqCreateKomoditas'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasSingle'
+      security:
+      - Authorization: []
+      summary: Create komoditas
+      tags:
+      - Komoditas
+  /admin/komoditas-dijual:
+    get:
+      description: Get komoditas dijual list with filters
+      parameters:
+      - description: Tempat usaha ID
+        in: query
+        name: id_tempat_usaha
+        type: string
+      - description: Komoditas ID
+        in: query
+        name: id_komoditas
+        type: string
+      - description: Status
+        in: query
+        name: status
+        type: integer
+      - description: Show count
+        in: query
+        name: show-count
+        type: boolean
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Order by
+        in: query
+        name: order-by
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasDijualList'
+      security:
+      - Authorization: []
+      summary: Get komoditas dijual list
+      tags:
+      - Komoditas Dijual
+    post:
+      consumes:
+      - application/json
+      description: Create komoditas dijual row
+      parameters:
+      - description: Create komoditas dijual payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ReqCreateKomoditasDijual'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasDijualSingle'
+      security:
+      - Authorization: []
+      summary: Create komoditas dijual
+      tags:
+      - Komoditas Dijual
+  /admin/komoditas-dijual/{id}:
+    delete:
+      description: Set komoditas dijual status to inactive
+      parameters:
+      - description: Komoditas dijual ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasDijualSingle'
+      security:
+      - Authorization: []
+      summary: Delete komoditas dijual
+      tags:
+      - Komoditas Dijual
+    get:
+      description: Get komoditas dijual detail by ID
+      parameters:
+      - description: Komoditas dijual ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasDijualSingle'
+      security:
+      - Authorization: []
+      summary: Get komoditas dijual by ID
+      tags:
+      - Komoditas Dijual
+    put:
+      consumes:
+      - application/json
+      description: Update komoditas dijual by ID
+      parameters:
+      - description: Komoditas dijual ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update komoditas dijual payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ReqUpdateKomoditasDijual'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasDijualSingle'
+      security:
+      - Authorization: []
+      summary: Update komoditas dijual
+      tags:
+      - Komoditas Dijual
+  /admin/komoditas/{id}:
+    get:
+      description: Get komoditas detail by ID
+      parameters:
+      - description: Komoditas ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasSingle'
+      security:
+      - Authorization: []
+      summary: Get komoditas by ID
+      tags:
+      - Komoditas
+    put:
+      consumes:
+      - application/json
+      description: Update komoditas by ID
+      parameters:
+      - description: Komoditas ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update komoditas payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ReqUpdateKomoditas'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasSingle'
+      security:
+      - Authorization: []
+      summary: Update komoditas
+      tags:
+      - Komoditas
+  /admin/pasar:
+    get:
+      description: Get pasar list with filters
+      parameters:
+      - description: Pasar name
+        in: query
+        name: name
+        type: string
+      - description: Pasar status
+        in: query
+        name: status
+        type: integer
+      - description: Show count
+        in: query
+        name: show-count
+        type: boolean
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Order by
+        in: query
+        name: order-by
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPasarList'
+      security:
+      - Authorization: []
+      summary: Get pasar list
+      tags:
+      - Pasar
+    post:
+      consumes:
+      - application/json
+      description: Create new pasar
+      parameters:
+      - description: Create pasar payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ReqCreatePasar'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPasarSingle'
+      security:
+      - Authorization: []
+      summary: Create pasar
+      tags:
+      - Pasar
+  /admin/pasar/{id}:
+    delete:
+      description: Set pasar status to inactive
+      parameters:
+      - description: Pasar ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPasarSingle'
+      security:
+      - Authorization: []
+      summary: Delete pasar
+      tags:
+      - Pasar
+    get:
+      description: Get pasar detail by ID
+      parameters:
+      - description: Pasar ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPasarSingle'
+      security:
+      - Authorization: []
+      summary: Get pasar by ID
+      tags:
+      - Pasar
+    put:
+      consumes:
+      - application/json
+      description: Update pasar by ID
+      parameters:
+      - description: Pasar ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update pasar payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ReqUpdatePasar'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPasarSingle'
+      security:
+      - Authorization: []
+      summary: Update pasar
+      tags:
+      - Pasar
+  /admin/pengumpulan-data:
+    get:
+      description: Get pengumpulan data list with filters
+      parameters:
+      - description: Pasar ID
+        in: query
+        name: id_pasar
+        type: string
+      - description: Status
+        in: query
+        name: status
+        type: integer
+      - description: From date
+        in: query
+        name: from
+        type: string
+      - description: To date
+        in: query
+        name: to
+        type: string
+      - description: Show count
+        in: query
+        name: show-count
+        type: boolean
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Order by
+        in: query
+        name: order-by
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPengumpulanDataList'
+      security:
+      - Authorization: []
+      summary: Get pengumpulan data list
+      tags:
+      - Pengumpulan Data
+    post:
+      consumes:
+      - application/json
+      description: Create draft pengumpulan data
+      parameters:
+      - description: Create pengumpulan data payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ReqCreatePengumpulanData'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPengumpulanDataSingle'
+      security:
+      - Authorization: []
+      summary: Create pengumpulan data
+      tags:
+      - Pengumpulan Data
+  /admin/pengumpulan-data/{id}:
+    delete:
+      description: Delete pengumpulan data when draft
+      parameters:
+      - description: Pengumpulan data ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPengumpulanDataSingle'
+      security:
+      - Authorization: []
+      summary: Delete pengumpulan data
+      tags:
+      - Pengumpulan Data
+    get:
+      description: Get pengumpulan data detail by ID
+      parameters:
+      - description: Pengumpulan data ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPengumpulanDataSingle'
+      security:
+      - Authorization: []
+      summary: Get pengumpulan data by ID
+      tags:
+      - Pengumpulan Data
+    put:
+      consumes:
+      - application/json
+      description: Update pengumpulan data by ID when draft
+      parameters:
+      - description: Pengumpulan data ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update pengumpulan data payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ReqUpdatePengumpulanData'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPengumpulanDataSingle'
+      security:
+      - Authorization: []
+      summary: Update pengumpulan data
+      tags:
+      - Pengumpulan Data
+  /admin/pengumpulan-data/{id}/finalize:
+    post:
+      description: Finalize draft and materialize harga pelaporan
+      parameters:
+      - description: Pengumpulan data ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResFinalizePengumpulanDataEnvelope'
+      security:
+      - Authorization: []
+      summary: Finalize pengumpulan data
+      tags:
+      - Pengumpulan Data
+  /admin/tempat-usaha:
+    get:
+      description: Get tempat usaha list with filters
+      parameters:
+      - description: Tempat usaha name
+        in: query
+        name: name
+        type: string
+      - description: Pasar ID
+        in: query
+        name: id_pasar
+        type: string
+      - description: Status
+        in: query
+        name: status
+        type: integer
+      - description: Show count
+        in: query
+        name: show-count
+        type: boolean
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Order by
+        in: query
+        name: order-by
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResTempatUsahaList'
+      security:
+      - Authorization: []
+      summary: Get tempat usaha list
+      tags:
+      - Tempat Usaha
+    post:
+      consumes:
+      - application/json
+      description: Create new tempat usaha
+      parameters:
+      - description: Create tempat usaha payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ReqCreateTempatUsaha'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResTempatUsahaSingle'
+      security:
+      - Authorization: []
+      summary: Create tempat usaha
+      tags:
+      - Tempat Usaha
+  /admin/tempat-usaha/{id}:
+    delete:
+      description: Set tempat usaha status to inactive
+      parameters:
+      - description: Tempat usaha ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResTempatUsahaSingle'
+      security:
+      - Authorization: []
+      summary: Delete tempat usaha
+      tags:
+      - Tempat Usaha
+    get:
+      description: Get tempat usaha detail by ID
+      parameters:
+      - description: Tempat usaha ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResTempatUsahaSingle'
+      security:
+      - Authorization: []
+      summary: Get tempat usaha by ID
+      tags:
+      - Tempat Usaha
+    put:
+      consumes:
+      - application/json
+      description: Update tempat usaha by ID
+      parameters:
+      - description: Tempat usaha ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update tempat usaha payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ReqUpdateTempatUsaha'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResTempatUsahaSingle'
+      security:
+      - Authorization: []
+      summary: Update tempat usaha
+      tags:
+      - Tempat Usaha
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Login using admin credentials and return JWT bearer token
+      parameters:
+      - description: Login payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ReqAuthLogin'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResAuthLoginEnvelope'
+      summary: Admin login
+      tags:
+      - Auth
+  /public/komoditas:
+    get:
+      description: Get public komoditas list
+      parameters:
+      - description: Komoditas name
+        in: query
+        name: name
+        type: string
+      - description: Tempat usaha ID
+        in: query
+        name: id_tempat_usaha
+        type: string
+      - description: Pasar ID
+        in: query
+        name: id_pasar
+        type: string
+      - description: Show count
+        in: query
+        name: show-count
+        type: boolean
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Order by
+        in: query
+        name: order-by
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasList'
+      summary: Public komoditas list
+      tags:
+      - Public
+  /public/komoditas/{id}:
+    get:
+      description: Get public komoditas detail and stats
+      parameters:
+      - description: Komoditas ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Stats range in days
+        in: query
+        name: days
+        type: integer
+      - description: Pasar ID
+        in: query
+        name: id_pasar
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPublicKomoditasDetailEnvelope'
+      summary: Public komoditas detail
+      tags:
+      - Public
+  /public/komoditas/{id}/trend:
+    get:
+      description: Get public komoditas trend points
+      parameters:
+      - description: Komoditas ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Trend range in days
+        in: query
+        name: days
+        type: integer
+      - description: Pasar ID
+        in: query
+        name: id_pasar
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPublicTrendEnvelope'
+      summary: Public komoditas trend
+      tags:
+      - Public
+  /public/overview:
+    get:
+      description: Get SIHP public summary counts
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPublicOverviewEnvelope'
+      summary: Public overview
+      tags:
+      - Public
+  /public/pasar:
+    get:
+      description: Get public pasar list
+      parameters:
+      - description: Pasar name
+        in: query
+        name: name
+        type: string
+      - description: Pasar status
+        in: query
+        name: status
+        type: integer
+      - description: Show count
+        in: query
+        name: show-count
+        type: boolean
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Order by
+        in: query
+        name: order-by
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPasarList'
+      summary: Public pasar list
+      tags:
+      - Public
+  /public/pasar/{id}:
+    get:
+      description: Get public pasar detail with tempat usaha list
+      parameters:
+      - description: Pasar ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Tempat usaha name
+        in: query
+        name: name
+        type: string
+      - description: Tempat usaha status
+        in: query
+        name: status
+        type: integer
+      - description: Show count
+        in: query
+        name: show-count
+        type: boolean
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Order by
+        in: query
+        name: order-by
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPublicPasarDetailEnvelope'
+      summary: Public pasar detail
+      tags:
+      - Public
+  /public/tempat-usaha:
+    get:
+      description: Get public tempat usaha list
+      parameters:
+      - description: Tempat usaha name
+        in: query
+        name: name
+        type: string
+      - description: Pasar ID
+        in: query
+        name: id_pasar
+        type: string
+      - description: Tempat usaha status
+        in: query
+        name: status
+        type: integer
+      - description: Show count
+        in: query
+        name: show-count
+        type: boolean
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Order by
+        in: query
+        name: order-by
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResTempatUsahaList'
+      summary: Public tempat usaha list
+      tags:
+      - Public
+  /public/tempat-usaha/{id}:
+    get:
+      description: Get public tempat usaha detail with komoditas list
+      parameters:
+      - description: Tempat usaha ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Komoditas name
+        in: query
+        name: name
+        type: string
+      - description: Show count
+        in: query
+        name: show-count
+        type: boolean
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Order by
+        in: query
+        name: order-by
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPublicTempatUsahaDetailEnvelope'
+      summary: Public tempat usaha detail
+      tags:
+      - Public
 securityDefinitions:
   Authorization:
     description: Authentication token (Bearer token)

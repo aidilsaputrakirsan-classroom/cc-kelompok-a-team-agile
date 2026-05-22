@@ -1,8 +1,8 @@
 package router
 
 import (
-	"github.com/alxhtp/monogo/config"
 	"github.com/gofiber/fiber/v2"
+	"github.com/thdoikn/sihp-be/config"
 	"gorm.io/gorm"
 )
 

@@ -8,16 +8,16 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/alxhtp/monogo/config"
-	_ "github.com/alxhtp/monogo/docs"
-	restserver "github.com/alxhtp/monogo/internal/server/rest"
+	"github.com/thdoikn/sihp-be/config"
+	_ "github.com/thdoikn/sihp-be/docs"
+	restserver "github.com/thdoikn/sihp-be/internal/server/rest"
 )
 
 // Package main provides the API server
 //
-// @title           Monogo API
+// @title           SIHP API
 // @version         1.0
-// @description     Monogo API Collection
+// @description     SIHP API Collection
 // @termsOfService  http://swagger.io/terms/
 //
 // @contact.name   API Support

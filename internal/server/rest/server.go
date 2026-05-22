@@ -11,15 +11,15 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/alxhtp/monogo/config"
-	"github.com/alxhtp/monogo/internal/server/rest/router"
-	databasehelper "github.com/alxhtp/monogo/pkg/helper/database"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/basicauth"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/swagger"
+	"github.com/thdoikn/sihp-be/config"
+	"github.com/thdoikn/sihp-be/internal/server/rest/router"
+	databasehelper "github.com/thdoikn/sihp-be/pkg/helper/database"
 	"gorm.io/gorm"
 )
 
@@ -123,5 +123,7 @@ func (s *RestServer) Shutdown() error {
 
 func (s *RestServer) RegisterRoutes() {
 	dependencies := router.NewDependencies(s.app, s.db, s.cfg)
-	router.UserRouter(dependencies)
+	router.AuthRouter(dependencies)
+	router.PublicRouter(dependencies)
+	router.AdminRouter(dependencies)
 }

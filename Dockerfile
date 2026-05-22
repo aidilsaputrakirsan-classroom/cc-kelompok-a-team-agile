@@ -16,14 +16,14 @@ RUN go mod download
 COPY . .
 
 # Install swag CLI tool
-RUN go install github.com/swaggo/swag/cmd/swag@latest
+RUN go install github.com/swaggo/swag/cmd/swag@v1.16.6
 
 # Generate Swagger documentation
 RUN swag init -g cmd/main.go --output docs --parseDependency
 
 
 # Build a statically linked binary for production
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /app/bin/monogo -ldflags="-s -w" ./cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /app/bin/sihp-be -ldflags="-s -w" ./cmd/main.go
 
 # ----------- Development Stage -----------
 FROM golang:1.25-alpine AS dev
@@ -50,7 +50,7 @@ USER nonroot:nonroot
 WORKDIR /app
 
 # Copy the statically built binary from builder
-COPY --from=builder /app/bin/monogo /app/monogo
+COPY --from=builder /app/bin/sihp-be /app/sihp-be
 
 # Copy Swagger docs
 COPY --from=builder /app/docs /app/docs
@@ -59,4 +59,4 @@ COPY --from=builder /app/docs /app/docs
 EXPOSE 8080
 
 # Run the binary
-ENTRYPOINT ["/app/monogo"]
+ENTRYPOINT ["/app/sihp-be"]

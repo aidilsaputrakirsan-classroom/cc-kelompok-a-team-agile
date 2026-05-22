@@ -24,71 +24,55 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/users": {
+        "/admin/harga-pelaporan": {
             "get": {
-                "description": "Get users by filter",
-                "consumes": [
-                    "application/json"
+                "security": [
+                    {
+                        "Authorization": []
+                    }
                 ],
+                "description": "Get harga pelaporan list with filters",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "User"
+                    "Harga Pelaporan"
                 ],
-                "summary": "Get users by filter",
+                "summary": "Get harga pelaporan list",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User IDs, comma separated uuids",
-                        "name": "ids",
+                        "description": "Pasar ID",
+                        "name": "id_pasar",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Name",
-                        "name": "name",
+                        "description": "Komoditas ID",
+                        "name": "id_komoditas",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Email",
-                        "name": "email",
+                        "description": "From date",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "To date",
+                        "name": "to",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Status",
+                        "description": "Pengumpulan data status",
                         "name": "status",
                         "in": "query"
                     },
                     {
-                        "type": "string",
-                        "description": "Sex",
-                        "name": "sex",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Address",
-                        "name": "address",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Phone",
-                        "name": "phone",
-                        "in": "query"
-                    },
-                    {
                         "type": "boolean",
-                        "description": "Include Deleted",
-                        "name": "include-deleted",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Show Count",
+                        "description": "Show count",
                         "name": "show-count",
                         "in": "query"
                     },
@@ -106,7 +90,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Order By, default: +created_at",
+                        "description": "Order by",
                         "name": "order-by",
                         "in": "query"
                     }
@@ -115,13 +99,121 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_alxhtp_monogo_pkg_dto.ResUserList"
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResHargaPelaporanList"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/harga-pelaporan/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get harga pelaporan detail by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Harga Pelaporan"
+                ],
+                "summary": "Get harga pelaporan by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Harga pelaporan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResHargaPelaporanSingle"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/harga-rutin": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get harga rutin list with filters",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Harga Rutin"
+                ],
+                "summary": "Get harga rutin list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pengumpulan data ID",
+                        "name": "id_pengumpulan_data",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Tempat usaha ID",
+                        "name": "id_tempat_usaha",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Komoditas ID",
+                        "name": "id_komoditas",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Show count",
+                        "name": "show-count",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order by",
+                        "name": "order-by",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResHargaRutinList"
                         }
                     }
                 }
             },
             "post": {
-                "description": "Create a new user",
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Create harga rutin row for draft batch",
                 "consumes": [
                     "application/json"
                 ],
@@ -129,17 +221,17 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "User"
+                    "Harga Rutin"
                 ],
-                "summary": "Create a new user",
+                "summary": "Create harga rutin",
                 "parameters": [
                     {
-                        "description": "User",
-                        "name": "user",
+                        "description": "Create harga rutin payload",
+                        "name": "payload",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_alxhtp_monogo_pkg_dto.ReqCreateUser"
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ReqCreateHargaRutin"
                         }
                     }
                 ],
@@ -147,29 +239,31 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_alxhtp_monogo_pkg_dto.ResUserSingle"
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResHargaRutinSingle"
                         }
                     }
                 }
             }
         },
-        "/users/{id}": {
+        "/admin/harga-rutin/{id}": {
             "get": {
-                "description": "Get a user by ID",
-                "consumes": [
-                    "application/json"
+                "security": [
+                    {
+                        "Authorization": []
+                    }
                 ],
+                "description": "Get harga rutin detail by ID",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "User"
+                    "Harga Rutin"
                 ],
-                "summary": "Get a user by ID",
+                "summary": "Get harga rutin by ID",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User ID",
+                        "description": "Harga rutin ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -179,13 +273,18 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_alxhtp_monogo_pkg_dto.ResUserSingle"
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResHargaRutinSingle"
                         }
                     }
                 }
             },
             "put": {
-                "description": "Update a user",
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Update harga rutin by ID for draft batch",
                 "consumes": [
                     "application/json"
                 ],
@@ -193,24 +292,24 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "User"
+                    "Harga Rutin"
                 ],
-                "summary": "Update a user",
+                "summary": "Update harga rutin",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User ID",
+                        "description": "Harga rutin ID",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "User",
-                        "name": "user",
+                        "description": "Update harga rutin payload",
+                        "name": "payload",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_alxhtp_monogo_pkg_dto.ReqUpdateUser"
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ReqUpdateHargaRutin"
                         }
                     }
                 ],
@@ -218,27 +317,29 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_alxhtp_monogo_pkg_dto.ResUserSingle"
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResHargaRutinSingle"
                         }
                     }
                 }
             },
             "delete": {
-                "description": "Delete a user",
-                "consumes": [
-                    "application/json"
+                "security": [
+                    {
+                        "Authorization": []
+                    }
                 ],
+                "description": "Delete harga rutin by ID for draft batch",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "User"
+                    "Harga Rutin"
                 ],
-                "summary": "Delete a user",
+                "summary": "Delete harga rutin",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User ID",
+                        "description": "Harga rutin ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -248,7 +349,1535 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_alxhtp_monogo_pkg_dto_base.BaseRes"
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResHargaRutinSingle"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/komoditas": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get komoditas list with filters",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Komoditas"
+                ],
+                "summary": "Get komoditas list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Komoditas name",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Tempat usaha ID",
+                        "name": "id_tempat_usaha",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Pasar ID",
+                        "name": "id_pasar",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Show count",
+                        "name": "show-count",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order by",
+                        "name": "order-by",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasList"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Create new komoditas",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Komoditas"
+                ],
+                "summary": "Create komoditas",
+                "parameters": [
+                    {
+                        "description": "Create komoditas payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ReqCreateKomoditas"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasSingle"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/komoditas-dijual": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get komoditas dijual list with filters",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Komoditas Dijual"
+                ],
+                "summary": "Get komoditas dijual list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tempat usaha ID",
+                        "name": "id_tempat_usaha",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Komoditas ID",
+                        "name": "id_komoditas",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Show count",
+                        "name": "show-count",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order by",
+                        "name": "order-by",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasDijualList"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Create komoditas dijual row",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Komoditas Dijual"
+                ],
+                "summary": "Create komoditas dijual",
+                "parameters": [
+                    {
+                        "description": "Create komoditas dijual payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ReqCreateKomoditasDijual"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasDijualSingle"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/komoditas-dijual/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get komoditas dijual detail by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Komoditas Dijual"
+                ],
+                "summary": "Get komoditas dijual by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Komoditas dijual ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasDijualSingle"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Update komoditas dijual by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Komoditas Dijual"
+                ],
+                "summary": "Update komoditas dijual",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Komoditas dijual ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update komoditas dijual payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ReqUpdateKomoditasDijual"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasDijualSingle"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Set komoditas dijual status to inactive",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Komoditas Dijual"
+                ],
+                "summary": "Delete komoditas dijual",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Komoditas dijual ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasDijualSingle"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/komoditas/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get komoditas detail by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Komoditas"
+                ],
+                "summary": "Get komoditas by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Komoditas ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasSingle"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Update komoditas by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Komoditas"
+                ],
+                "summary": "Update komoditas",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Komoditas ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update komoditas payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ReqUpdateKomoditas"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasSingle"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/pasar": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get pasar list with filters",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pasar"
+                ],
+                "summary": "Get pasar list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pasar name",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Pasar status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Show count",
+                        "name": "show-count",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order by",
+                        "name": "order-by",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPasarList"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Create new pasar",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pasar"
+                ],
+                "summary": "Create pasar",
+                "parameters": [
+                    {
+                        "description": "Create pasar payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ReqCreatePasar"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPasarSingle"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/pasar/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get pasar detail by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pasar"
+                ],
+                "summary": "Get pasar by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pasar ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPasarSingle"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Update pasar by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pasar"
+                ],
+                "summary": "Update pasar",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pasar ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update pasar payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ReqUpdatePasar"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPasarSingle"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Set pasar status to inactive",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pasar"
+                ],
+                "summary": "Delete pasar",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pasar ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPasarSingle"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/pengumpulan-data": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get pengumpulan data list with filters",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pengumpulan Data"
+                ],
+                "summary": "Get pengumpulan data list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pasar ID",
+                        "name": "id_pasar",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "From date",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "To date",
+                        "name": "to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Show count",
+                        "name": "show-count",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order by",
+                        "name": "order-by",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPengumpulanDataList"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Create draft pengumpulan data",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pengumpulan Data"
+                ],
+                "summary": "Create pengumpulan data",
+                "parameters": [
+                    {
+                        "description": "Create pengumpulan data payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ReqCreatePengumpulanData"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPengumpulanDataSingle"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/pengumpulan-data/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get pengumpulan data detail by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pengumpulan Data"
+                ],
+                "summary": "Get pengumpulan data by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pengumpulan data ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPengumpulanDataSingle"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Update pengumpulan data by ID when draft",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pengumpulan Data"
+                ],
+                "summary": "Update pengumpulan data",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pengumpulan data ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update pengumpulan data payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ReqUpdatePengumpulanData"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPengumpulanDataSingle"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Delete pengumpulan data when draft",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pengumpulan Data"
+                ],
+                "summary": "Delete pengumpulan data",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pengumpulan data ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPengumpulanDataSingle"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/pengumpulan-data/{id}/finalize": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Finalize draft and materialize harga pelaporan",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pengumpulan Data"
+                ],
+                "summary": "Finalize pengumpulan data",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pengumpulan data ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResFinalizePengumpulanDataEnvelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/tempat-usaha": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get tempat usaha list with filters",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tempat Usaha"
+                ],
+                "summary": "Get tempat usaha list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tempat usaha name",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Pasar ID",
+                        "name": "id_pasar",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Show count",
+                        "name": "show-count",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order by",
+                        "name": "order-by",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResTempatUsahaList"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Create new tempat usaha",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tempat Usaha"
+                ],
+                "summary": "Create tempat usaha",
+                "parameters": [
+                    {
+                        "description": "Create tempat usaha payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ReqCreateTempatUsaha"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResTempatUsahaSingle"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/tempat-usaha/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get tempat usaha detail by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tempat Usaha"
+                ],
+                "summary": "Get tempat usaha by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tempat usaha ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResTempatUsahaSingle"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Update tempat usaha by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tempat Usaha"
+                ],
+                "summary": "Update tempat usaha",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tempat usaha ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update tempat usaha payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ReqUpdateTempatUsaha"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResTempatUsahaSingle"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Set tempat usaha status to inactive",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tempat Usaha"
+                ],
+                "summary": "Delete tempat usaha",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tempat usaha ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResTempatUsahaSingle"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/login": {
+            "post": {
+                "description": "Login using admin credentials and return JWT bearer token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Admin login",
+                "parameters": [
+                    {
+                        "description": "Login payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ReqAuthLogin"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResAuthLoginEnvelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/public/komoditas": {
+            "get": {
+                "description": "Get public komoditas list",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Public"
+                ],
+                "summary": "Public komoditas list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Komoditas name",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Tempat usaha ID",
+                        "name": "id_tempat_usaha",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Pasar ID",
+                        "name": "id_pasar",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Show count",
+                        "name": "show-count",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order by",
+                        "name": "order-by",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasList"
+                        }
+                    }
+                }
+            }
+        },
+        "/public/komoditas/{id}": {
+            "get": {
+                "description": "Get public komoditas detail and stats",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Public"
+                ],
+                "summary": "Public komoditas detail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Komoditas ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Stats range in days",
+                        "name": "days",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Pasar ID",
+                        "name": "id_pasar",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPublicKomoditasDetailEnvelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/public/komoditas/{id}/trend": {
+            "get": {
+                "description": "Get public komoditas trend points",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Public"
+                ],
+                "summary": "Public komoditas trend",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Komoditas ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Trend range in days",
+                        "name": "days",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Pasar ID",
+                        "name": "id_pasar",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPublicTrendEnvelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/public/overview": {
+            "get": {
+                "description": "Get SIHP public summary counts",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Public"
+                ],
+                "summary": "Public overview",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPublicOverviewEnvelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/public/pasar": {
+            "get": {
+                "description": "Get public pasar list",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Public"
+                ],
+                "summary": "Public pasar list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pasar name",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Pasar status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Show count",
+                        "name": "show-count",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order by",
+                        "name": "order-by",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPasarList"
+                        }
+                    }
+                }
+            }
+        },
+        "/public/pasar/{id}": {
+            "get": {
+                "description": "Get public pasar detail with tempat usaha list",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Public"
+                ],
+                "summary": "Public pasar detail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pasar ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Tempat usaha name",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Tempat usaha status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Show count",
+                        "name": "show-count",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order by",
+                        "name": "order-by",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPublicPasarDetailEnvelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/public/tempat-usaha": {
+            "get": {
+                "description": "Get public tempat usaha list",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Public"
+                ],
+                "summary": "Public tempat usaha list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tempat usaha name",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Pasar ID",
+                        "name": "id_pasar",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Tempat usaha status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Show count",
+                        "name": "show-count",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order by",
+                        "name": "order-by",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResTempatUsahaList"
+                        }
+                    }
+                }
+            }
+        },
+        "/public/tempat-usaha/{id}": {
+            "get": {
+                "description": "Get public tempat usaha detail with komoditas list",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Public"
+                ],
+                "summary": "Public tempat usaha detail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tempat usaha ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Komoditas name",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Show count",
+                        "name": "show-count",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Order by",
+                        "name": "order-by",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPublicTempatUsahaDetailEnvelope"
                         }
                     }
                 }
@@ -256,34 +1885,168 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "github_com_alxhtp_monogo_pkg_dto.ReqCreateUser": {
+        "github_com_thdoikn_sihp-be_pkg_dto.ReqAuthLogin": {
             "type": "object",
             "required": [
                 "email",
-                "name"
+                "password"
             ],
             "properties": {
                 "email": {
                     "type": "string"
                 },
-                "metadata": {
-                    "$ref": "#/definitions/github_com_alxhtp_monogo_pkg_dto.UserMetadata"
-                },
-                "name": {
+                "password": {
                     "type": "string"
                 }
             }
         },
-        "github_com_alxhtp_monogo_pkg_dto.ReqUpdateUser": {
+        "github_com_thdoikn_sihp-be_pkg_dto.ReqCreateHargaRutin": {
             "type": "object",
+            "required": [
+                "harga",
+                "id_komoditas",
+                "id_pengumpulan_data",
+                "id_tempat_usaha",
+                "kelas_komoditas"
+            ],
             "properties": {
-                "email": {
+                "harga": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "id_komoditas": {
                     "type": "string"
                 },
-                "metadata": {
-                    "$ref": "#/definitions/github_com_alxhtp_monogo_pkg_dto.UserMetadata"
+                "id_pengumpulan_data": {
+                    "type": "string"
                 },
-                "name": {
+                "id_tempat_usaha": {
+                    "type": "string"
+                },
+                "kelas_komoditas": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ReqCreateKomoditas": {
+            "type": "object",
+            "required": [
+                "nama"
+            ],
+            "properties": {
+                "nama": {
+                    "type": "string"
+                },
+                "satuan": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ReqCreateKomoditasDijual": {
+            "type": "object",
+            "required": [
+                "id_komoditas",
+                "id_tempat_usaha"
+            ],
+            "properties": {
+                "id_komoditas": {
+                    "type": "string"
+                },
+                "id_tempat_usaha": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ReqCreatePasar": {
+            "type": "object",
+            "required": [
+                "nama"
+            ],
+            "properties": {
+                "alamat": {
+                    "type": "string"
+                },
+                "nama": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ReqCreatePengumpulanData": {
+            "type": "object",
+            "required": [
+                "id_pasar",
+                "tanggal"
+            ],
+            "properties": {
+                "catatan": {
+                    "type": "string"
+                },
+                "id_pasar": {
+                    "type": "string"
+                },
+                "tanggal": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ReqCreateTempatUsaha": {
+            "type": "object",
+            "required": [
+                "id_pasar",
+                "nama"
+            ],
+            "properties": {
+                "id_pasar": {
+                    "type": "string"
+                },
+                "nama": {
+                    "type": "string"
+                },
+                "pemilik": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ReqUpdateHargaRutin": {
+            "type": "object",
+            "properties": {
+                "harga": {
+                    "type": "integer"
+                },
+                "id_tempat_usaha": {
+                    "type": "string"
+                },
+                "kelas_komoditas": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ReqUpdateKomoditas": {
+            "type": "object",
+            "properties": {
+                "nama": {
+                    "type": "string"
+                },
+                "satuan": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ReqUpdateKomoditasDijual": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ReqUpdatePasar": {
+            "type": "object",
+            "properties": {
+                "alamat": {
+                    "type": "string"
+                },
+                "nama": {
                     "type": "string"
                 },
                 "status": {
@@ -291,7 +2054,35 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_alxhtp_monogo_pkg_dto.ResUser": {
+        "github_com_thdoikn_sihp-be_pkg_dto.ReqUpdatePengumpulanData": {
+            "type": "object",
+            "properties": {
+                "catatan": {
+                    "type": "string"
+                },
+                "tanggal": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ReqUpdateTempatUsaha": {
+            "type": "object",
+            "properties": {
+                "id_pasar": {
+                    "type": "string"
+                },
+                "nama": {
+                    "type": "string"
+                },
+                "pemilik": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResAdmin": {
             "type": "object",
             "properties": {
                 "email": {
@@ -300,18 +2091,115 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
-                "metadata": {
-                    "$ref": "#/definitions/github_com_alxhtp_monogo_pkg_dto.UserMetadata"
-                },
                 "name": {
                     "type": "string"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResAuthLogin": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResAuthToken"
                 },
-                "status": {
+                "user": {
+                    "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResAdmin"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResAuthLoginEnvelope": {
+            "type": "object",
+            "required": [
+                "code",
+                "message",
+                "success"
+            ],
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResAuthLogin"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "stacktrace": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResAuthToken": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "expires_in": {
+                    "type": "integer"
+                },
+                "token_type": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResFinalizePengumpulanData": {
+            "type": "object",
+            "properties": {
+                "finalized_komoditas_count": {
                     "type": "integer"
                 }
             }
         },
-        "github_com_alxhtp_monogo_pkg_dto.ResUserList": {
+        "github_com_thdoikn_sihp-be_pkg_dto.ResFinalizePengumpulanDataEnvelope": {
+            "type": "object",
+            "required": [
+                "code",
+                "message",
+                "success"
+            ],
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResFinalizePengumpulanData"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "stacktrace": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResHargaPelaporan": {
+            "type": "object",
+            "properties": {
+                "harga": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "id_komoditas": {
+                    "type": "string"
+                },
+                "id_pengumpulan_data": {
+                    "type": "string"
+                },
+                "tanggal": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResHargaPelaporanList": {
             "type": "object",
             "required": [
                 "code",
@@ -325,14 +2213,14 @@ const docTemplate = `{
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_alxhtp_monogo_pkg_dto.ResUser"
+                        "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResHargaPelaporan"
                     }
                 },
                 "message": {
                     "type": "string"
                 },
                 "page": {
-                    "$ref": "#/definitions/github_com_alxhtp_monogo_pkg_dto_base.BasePagination"
+                    "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto_base.BasePagination"
                 },
                 "stacktrace": {
                     "type": "string"
@@ -342,7 +2230,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_alxhtp_monogo_pkg_dto.ResUserSingle": {
+        "github_com_thdoikn_sihp-be_pkg_dto.ResHargaPelaporanSingle": {
             "type": "object",
             "required": [
                 "code",
@@ -354,7 +2242,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "data": {
-                    "$ref": "#/definitions/github_com_alxhtp_monogo_pkg_dto.ResUser"
+                    "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResHargaPelaporan"
                 },
                 "message": {
                     "type": "string"
@@ -367,31 +2255,695 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_alxhtp_monogo_pkg_dto.UserMetadata": {
+        "github_com_thdoikn_sihp-be_pkg_dto.ResHargaRutin": {
             "type": "object",
-            "required": [
-                "address",
-                "phone",
-                "sex"
-            ],
             "properties": {
-                "address": {
-                    "type": "string",
-                    "maxLength": 255
+                "harga": {
+                    "type": "integer"
                 },
-                "phone": {
+                "id": {
                     "type": "string"
                 },
-                "sex": {
-                    "type": "string",
-                    "enum": [
-                        "male",
-                        "female"
-                    ]
+                "id_komoditas": {
+                    "type": "string"
+                },
+                "id_pengumpulan_data": {
+                    "type": "string"
+                },
+                "id_tempat_usaha": {
+                    "type": "string"
+                },
+                "kelas_komoditas": {
+                    "type": "string"
                 }
             }
         },
-        "github_com_alxhtp_monogo_pkg_dto_base.BasePagination": {
+        "github_com_thdoikn_sihp-be_pkg_dto.ResHargaRutinList": {
+            "type": "object",
+            "required": [
+                "code",
+                "message",
+                "success"
+            ],
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResHargaRutin"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "page": {
+                    "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto_base.BasePagination"
+                },
+                "stacktrace": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResHargaRutinSingle": {
+            "type": "object",
+            "required": [
+                "code",
+                "message",
+                "success"
+            ],
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResHargaRutin"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "stacktrace": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResKomoditas": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "nama": {
+                    "type": "string"
+                },
+                "satuan": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasDijual": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "id_komoditas": {
+                    "type": "string"
+                },
+                "id_tempat_usaha": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasDijualList": {
+            "type": "object",
+            "required": [
+                "code",
+                "message",
+                "success"
+            ],
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasDijual"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "page": {
+                    "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto_base.BasePagination"
+                },
+                "stacktrace": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasDijualSingle": {
+            "type": "object",
+            "required": [
+                "code",
+                "message",
+                "success"
+            ],
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasDijual"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "stacktrace": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasList": {
+            "type": "object",
+            "required": [
+                "code",
+                "message",
+                "success"
+            ],
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResKomoditas"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "page": {
+                    "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto_base.BasePagination"
+                },
+                "stacktrace": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResKomoditasSingle": {
+            "type": "object",
+            "required": [
+                "code",
+                "message",
+                "success"
+            ],
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResKomoditas"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "stacktrace": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResPasar": {
+            "type": "object",
+            "properties": {
+                "alamat": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "nama": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResPasarList": {
+            "type": "object",
+            "required": [
+                "code",
+                "message",
+                "success"
+            ],
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPasar"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "page": {
+                    "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto_base.BasePagination"
+                },
+                "stacktrace": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResPasarSingle": {
+            "type": "object",
+            "required": [
+                "code",
+                "message",
+                "success"
+            ],
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPasar"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "stacktrace": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResPengumpulanData": {
+            "type": "object",
+            "properties": {
+                "catatan": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "id_pasar": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "tanggal": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResPengumpulanDataList": {
+            "type": "object",
+            "required": [
+                "code",
+                "message",
+                "success"
+            ],
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPengumpulanData"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "page": {
+                    "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto_base.BasePagination"
+                },
+                "stacktrace": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResPengumpulanDataSingle": {
+            "type": "object",
+            "required": [
+                "code",
+                "message",
+                "success"
+            ],
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPengumpulanData"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "stacktrace": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResPublicHargaStat": {
+            "type": "object",
+            "properties": {
+                "harga_rata_rata": {
+                    "type": "number"
+                },
+                "tanggal": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResPublicKomoditasDetail": {
+            "type": "object",
+            "properties": {
+                "avg_nd": {
+                    "type": "number"
+                },
+                "days": {
+                    "type": "integer"
+                },
+                "komoditas": {
+                    "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResKomoditas"
+                },
+                "latest": {
+                    "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPublicHargaStat"
+                },
+                "max_nd": {
+                    "type": "number"
+                },
+                "min_nd": {
+                    "type": "number"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResPublicKomoditasDetailEnvelope": {
+            "type": "object",
+            "required": [
+                "code",
+                "message",
+                "success"
+            ],
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPublicKomoditasDetail"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "stacktrace": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResPublicOverview": {
+            "type": "object",
+            "properties": {
+                "komoditas_count": {
+                    "type": "integer"
+                },
+                "pasar_active_count": {
+                    "type": "integer"
+                },
+                "tempat_usaha_active_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResPublicOverviewEnvelope": {
+            "type": "object",
+            "required": [
+                "code",
+                "message",
+                "success"
+            ],
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPublicOverview"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "stacktrace": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResPublicPasarDetail": {
+            "type": "object",
+            "properties": {
+                "page": {
+                    "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto_base.BasePagination"
+                },
+                "pasar": {
+                    "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPasar"
+                },
+                "tempat_usaha": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResTempatUsaha"
+                    }
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResPublicPasarDetailEnvelope": {
+            "type": "object",
+            "required": [
+                "code",
+                "message",
+                "success"
+            ],
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPublicPasarDetail"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "stacktrace": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResPublicTempatUsahaDetail": {
+            "type": "object",
+            "properties": {
+                "komoditas": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPublicTempatUsahaKomoditas"
+                    }
+                },
+                "page": {
+                    "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto_base.BasePagination"
+                },
+                "pasar": {
+                    "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPasar"
+                },
+                "tempat_usaha": {
+                    "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResTempatUsaha"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResPublicTempatUsahaDetailEnvelope": {
+            "type": "object",
+            "required": [
+                "code",
+                "message",
+                "success"
+            ],
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPublicTempatUsahaDetail"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "stacktrace": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResPublicTempatUsahaKomoditas": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "latest": {
+                    "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPublicHargaStat"
+                },
+                "nama": {
+                    "type": "string"
+                },
+                "satuan": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResPublicTrendEnvelope": {
+            "type": "object",
+            "required": [
+                "code",
+                "message",
+                "success"
+            ],
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResPublicTrendPoint"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "stacktrace": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResPublicTrendPoint": {
+            "type": "object",
+            "properties": {
+                "harga_rata_rata": {
+                    "type": "number"
+                },
+                "tanggal": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResTempatUsaha": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "id_pasar": {
+                    "type": "string"
+                },
+                "nama": {
+                    "type": "string"
+                },
+                "pemilik": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResTempatUsahaList": {
+            "type": "object",
+            "required": [
+                "code",
+                "message",
+                "success"
+            ],
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResTempatUsaha"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "page": {
+                    "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto_base.BasePagination"
+                },
+                "stacktrace": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto.ResTempatUsahaSingle": {
+            "type": "object",
+            "required": [
+                "code",
+                "message",
+                "success"
+            ],
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/github_com_thdoikn_sihp-be_pkg_dto.ResTempatUsaha"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "stacktrace": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_thdoikn_sihp-be_pkg_dto_base.BasePagination": {
             "type": "object",
             "required": [
                 "count",
@@ -411,28 +2963,6 @@ const docTemplate = `{
                 },
                 "order_by": {
                     "type": "string"
-                }
-            }
-        },
-        "github_com_alxhtp_monogo_pkg_dto_base.BaseRes": {
-            "type": "object",
-            "required": [
-                "code",
-                "message",
-                "success"
-            ],
-            "properties": {
-                "code": {
-                    "type": "integer"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "stacktrace": {
-                    "type": "string"
-                },
-                "success": {
-                    "type": "boolean"
                 }
             }
         }
@@ -457,8 +2987,8 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "",
 	BasePath:         "/v1",
 	Schemes:          []string{},
-	Title:            "Monogo API",
-	Description:      "Monogo API Collection",
+	Title:            "SIHP API",
+	Description:      "SIHP API Collection",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

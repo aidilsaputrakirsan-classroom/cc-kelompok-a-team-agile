@@ -1,8 +1,8 @@
 # Variables
-BINARY_NAME := monogo
+BINARY_NAME := sihp-be
 SRC := cmd/main.go
 BIN_DIR := bin
-DOCKER_IMAGE := monogo:latest
+DOCKER_IMAGE := sihp-be:latest
 
 # Default target: build the Go binary
 .PHONY: build

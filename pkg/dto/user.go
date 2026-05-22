@@ -1,9 +1,9 @@
 package dto
 
 import (
-	dtobase "github.com/alxhtp/monogo/pkg/dto/base"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
+	dtobase "github.com/thdoikn/sihp-be/pkg/dto/base"
 )
 
 type ReqCreateUser struct {
