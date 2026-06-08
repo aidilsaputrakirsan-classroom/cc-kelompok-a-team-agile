@@ -323,7 +323,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshKomoditas = useCallback(async () => {
     try {
       const base = ((import.meta as any).env?.VITE_API_BASE_URL as string) || 'http://127.0.0.1:8080';
-      const res = await fetch(`${base}/v1/komoditas`);
+      const res = await fetch(`${base}/v1/public/komoditas`);
       if (!res.ok) return;
       const body = await res.json();
       const data = body?.data ?? body;

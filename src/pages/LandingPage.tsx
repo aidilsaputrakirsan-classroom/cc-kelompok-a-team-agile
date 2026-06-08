@@ -70,6 +70,7 @@ export default function LandingPage() {
     useData();
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
+  
   const [carouselApi, setCarouselApi] = useState<CarouselApi | null>(null);
   const [heroApi, setHeroApi] = useState<CarouselApi | null>(null);
   const [activeStat, setActiveStat] = useState<StatsKey | null>(null);
@@ -88,6 +89,45 @@ export default function LandingPage() {
     string[]
   >([]);
   const mapSectionRef = useRef<HTMLElement | null>(null);
+  const [searchResults, setSearchResults] = useState<SearchRow[]>([]);
+
+  useEffect(() => {
+    const name = query.trim();
+    if (!name) {
+      setSearchResults([]);
+      return;
+    }
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      const base =
+        import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8080";
+      try {
+        const res = await fetch(
+          `${base}/v1/public/komoditas?name=${encodeURIComponent(name)}&limit=8`,
+        );
+        const body = await res.json();
+        if (cancelled) return;
+        const list = body.data ?? [];
+        setSearchResults(
+          list.map((k: { id: string; nama: string; satuan?: string }) => ({
+            key: k.id,
+            title: k.nama,
+            subtitle: "Komoditas",
+            unit: k.satuan,
+            link: `/public/komoditas/${k.id}`,
+          })),
+        );
+      } catch {
+        if (!cancelled) setSearchResults([]);
+      }
+    }, 300);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [query]);
 
   const getStaggerStyle = (index: number, baseDelay = 0) => ({
     animationDelay: `${baseDelay + index * 80}ms`,
@@ -608,25 +648,6 @@ export default function LandingPage() {
     return [];
   }, []);
 
-  const searchResults = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-    if (!normalized) return [] as SearchRow[];
-
-    return komoditas
-      .filter((k) => k.nama.toLowerCase().includes(normalized))
-      .map((k) => {
-        const latest = latestByKomoditas[k.id];
-        return {
-          key: `kom-${k.id}`,
-          title: k.nama,
-          subtitle: latest ? `Update ${latest.tanggal}` : "Belum ada data",
-          price: latest?.harga_rata_rata,
-          unit: k.satuan_dasar,
-        };
-      })
-      .slice(0, 8);
-  }, [query, komoditas, latestByKomoditas]);
-
   const heroSlides = [
     {
       title: "Harga Komoditas",
@@ -780,7 +801,7 @@ export default function LandingPage() {
                 ) : (
                   <Card>
                     <CardContent className="p-4 text-sm text-muted-foreground">
-                      Tidak ada data untuk kata kunci tersebut.
+                      {query.trim() ? "Memuat..." : "Tidak ada data untuk kata kunci tersebut."}
                     </CardContent>
                   </Card>
                 )}
