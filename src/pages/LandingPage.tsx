@@ -70,13 +70,13 @@ export default function LandingPage() {
     useData();
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
-  
   const [carouselApi, setCarouselApi] = useState<CarouselApi | null>(null);
   const [heroApi, setHeroApi] = useState<CarouselApi | null>(null);
   const [activeStat, setActiveStat] = useState<StatsKey | null>(null);
   const [selectedMapPasarId, setSelectedMapPasarId] = useState<string | null>(
     null,
   );
+
   // New state untuk drill-down pasar/tempat usaha di stat panel
   const [selectedPasarForDetail, setSelectedPasarForDetail] = useState<
     string | null
@@ -934,10 +934,7 @@ export default function LandingPage() {
                 {/* ===== KOMODITAS CARDS ===== */}
                 {activeStat === "komoditas" && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {overallCards.filter((c) => c.latest).length > 0 ? (
-                      overallCards
-                        .filter((c) => c.latest)
-                        .map((card, index) => (
+                    {overallCards.filter((c) => c.latest).length > 0 ? (overallCards.filter((c) => c.latest).map((card, index) => (
                           <Card
                             key={card.komoditas.id}
                             onClick={() =>

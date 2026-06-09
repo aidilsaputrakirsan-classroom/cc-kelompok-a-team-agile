@@ -7,6 +7,12 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
 import type { Pasar, Komoditas, TempatUsaha, KomoditasDijual, HargaRutin, HargaPelaporan, KelasKomoditas, PeriodeUnit } from '@/types';
 import { PERIODE_TO_DAYS } from '@/types';
+import {
+  fetchKomoditasList,
+  createKomoditasApi,
+  updateKomoditasApi,
+  uploadKomoditasGambarApi,
+} from '@/lib/komoditas-api';
 
 /* ===== Helper Functions ===== */
 
@@ -42,7 +48,8 @@ interface DataContextType {
   updatePasar: (id: string, p: Partial<Pasar>) => void;
   deletePasar: (id: string) => void;
   addKomoditas: (k: Omit<Komoditas, 'id'>) => void;
-  updateKomoditas: (id: string, k: Partial<Komoditas>) => void;
+  createKomoditas: (k: Omit<Komoditas, 'id'>, imageFile?: File | null) => Promise<Komoditas>;
+  updateKomoditas: (id: string, k: Partial<Komoditas>, imageFile?: File | null) => Promise<Komoditas>;
   deleteKomoditas: (id: string) => void;
   addTempatUsaha: (t: Omit<TempatUsaha, 'id'>) => void;
   updateTempatUsaha: (id: string, t: Partial<TempatUsaha>) => void;
@@ -277,7 +284,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           longitude: Number(item.longitude ?? item.lng ?? item.lon ?? p.longitude ?? 0),
           latitude: Number(item.latitude ?? item.lat ?? p.latitude ?? 0),
           alamat: item.alamat ?? item.address ?? p.alamat ?? '',
-          is_active: Number(item.is_active ?? item.isActive ?? (item.active ? 1 : 0) ?? p.is_active ?? 1),
+          is_active: Number(
+            item.is_active ??
+            item.isActive ??
+            (typeof item.active !== 'undefined' ? (item.active ? 1 : 0) : (typeof p.is_active !== 'undefined' ? p.is_active : 1))
+          ),
+     
+     
         };
         persist('pasar', setPasar, prev => [...prev, mapped]);
         return mapped;
@@ -322,25 +335,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshKomoditas = useCallback(async () => {
     try {
-      const base = ((import.meta as any).env?.VITE_API_BASE_URL as string) || 'http://127.0.0.1:8080';
-      const res = await fetch(`${base}/v1/public/komoditas`);
-      if (!res.ok) return;
-      const body = await res.json();
-      const data = body?.data ?? body;
-      if (!Array.isArray(data)) return;
-
-      const mapped: Komoditas[] = data.map((item: any) => ({
-        id: item.id ?? item._id ?? item.komoditas_id ?? uid(),
-        nama: item.nama ?? item.name ?? '',
-        satuan_dasar: (item.satuan_dasar ?? item.satuan ?? 'kg') as any,
-        gambar: item.gambar ?? item.image ?? '',
-      }));
-
-      if (mapped.length > 0) {
-        setKomoditas(mapped);
-        save('komoditas', mapped);
-      }
-    } catch (err) {
+      const mapped = await fetchKomoditasList();
+      setKomoditas(mapped);
+      save('komoditas', mapped);
+    } catch {
       // gagal ambil, biarkan data lokal tetap
     }
   }, []);
@@ -353,7 +351,42 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   /* ===== CRUD Komoditas ===== */
   const addKomoditas = (k: Omit<Komoditas, 'id'>) => persist('komoditas', setKomoditas, prev => [...prev, { ...k, id: uid() }]);
-  const updateKomoditas = (id: string, k: Partial<Komoditas>) => persist('komoditas', setKomoditas, prev => prev.map(x => x.id === id ? { ...x, ...k } : x));
+
+  const createKomoditas = useCallback(async (
+    k: Omit<Komoditas, 'id'>,
+    imageFile?: File | null,
+  ): Promise<Komoditas> => {
+    let created = await createKomoditasApi({
+      nama: k.nama,
+      satuan_dasar: k.satuan_dasar,
+    });
+
+    if (imageFile) {
+      created = await uploadKomoditasGambarApi(created.id, imageFile);
+    }
+
+    persist('komoditas', setKomoditas, prev => [...prev, created]);
+    return created;
+  }, [persist]);
+
+  const updateKomoditas = useCallback(async (
+    id: string,
+    k: Partial<Komoditas>,
+    imageFile?: File | null,
+  ): Promise<Komoditas> => {
+    let updated = await updateKomoditasApi(id, {
+      nama: k.nama,
+      satuan_dasar: k.satuan_dasar,
+    });
+
+    if (imageFile) {
+      updated = await uploadKomoditasGambarApi(id, imageFile);
+    }
+
+    persist('komoditas', setKomoditas, prev => prev.map(x => x.id === id ? updated : x));
+    return updated;
+  }, [persist]);
+
   const deleteKomoditas = (id: string) => persist('komoditas', setKomoditas, prev => prev.filter(x => x.id !== id));
 
   /* ===== CRUD Tempat Usaha ===== */
@@ -506,7 +539,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       komoditasDijual, setKomoditasDijual, hargaRutin, setHargaRutin, hargaPelaporan,
       refreshPasar, refreshKomoditas,
       addPasar, createPasar, updatePasar, deletePasar,
-      addKomoditas, updateKomoditas, deleteKomoditas,
+      addKomoditas, createKomoditas, updateKomoditas, deleteKomoditas,
       addTempatUsaha, updateTempatUsaha, deleteTempatUsaha,
       addKomoditasDijual, updateKomoditasDijual, deleteKomoditasDijual,
       addHargaRutin, updateHargaRutin, deleteHargaRutin, calculateHargaPelaporan,
