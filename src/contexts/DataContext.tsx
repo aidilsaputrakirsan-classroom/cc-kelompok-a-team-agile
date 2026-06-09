@@ -13,6 +13,13 @@ import {
   updateKomoditasApi,
   uploadKomoditasGambarApi,
 } from '@/lib/komoditas-api';
+import {
+  fetchPasarList,
+  createPasarApi,
+  updatePasarApi,
+  deletePasarApi,
+} from '@/lib/pasar-api';
+import { getAccessToken } from '@/lib/api';
 
 /* ===== Helper Functions ===== */
 
@@ -44,9 +51,9 @@ interface DataContextType {
   hargaRutin: HargaRutin[]; setHargaRutin: React.Dispatch<React.SetStateAction<HargaRutin[]>>;
   hargaPelaporan: HargaPelaporan[];
   addPasar: (p: Omit<Pasar, 'id'>) => void;
-  createPasar: (p: Omit<Pasar, 'id'>) => Promise<Pasar | null>;
-  updatePasar: (id: string, p: Partial<Pasar>) => void;
-  deletePasar: (id: string) => void;
+  createPasar: (p: Omit<Pasar, 'id'>) => Promise<Pasar>;
+  updatePasar: (id: string, p: Partial<Pasar>) => Promise<Pasar>;
+  deletePasar: (id: string) => Promise<void>;
   addKomoditas: (k: Omit<Komoditas, 'id'>) => void;
   createKomoditas: (k: Omit<Komoditas, 'id'>, imageFile?: File | null) => Promise<Komoditas>;
   updateKomoditas: (id: string, k: Partial<Komoditas>, imageFile?: File | null) => Promise<Komoditas>;
@@ -262,76 +269,48 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, []);
 
-  /* ===== CRUD Pasar ===== */
+  /* ===== CRUD Pasar (via /v1/admin/pasar) ===== */
   const addPasar = (p: Omit<Pasar, 'id'>) => persist('pasar', setPasar, prev => [...prev, { ...p, id: uid() }]);
-  const updatePasar = (id: string, p: Partial<Pasar>) => persist('pasar', setPasar, prev => prev.map(x => x.id === id ? { ...x, ...p } : x));
-  const deletePasar = (id: string) => persist('pasar', setPasar, prev => prev.filter(x => x.id !== id));
 
-  const createPasar = useCallback(async (p: Omit<Pasar, 'id'>): Promise<Pasar | null> => {
-    try {
-      const base = ((import.meta as any).env?.VITE_API_BASE_URL as string) || 'http://127.0.0.1:8080';
-      const res = await fetch(`${base}/v1/pasar`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(p),
-      });
-      if (res.ok) {
-        const body = await res.json();
-        const item = (body?.data ?? body) as any;
-        const mapped: Pasar = {
-          id: item.id ?? item._id ?? item.pasar_id ?? uid(),
-          nama: item.nama ?? item.name ?? p.nama,
-          longitude: Number(item.longitude ?? item.lng ?? item.lon ?? p.longitude ?? 0),
-          latitude: Number(item.latitude ?? item.lat ?? p.latitude ?? 0),
-          alamat: item.alamat ?? item.address ?? p.alamat ?? '',
-          is_active: Number(
-            item.is_active ??
-            item.isActive ??
-            (typeof item.active !== 'undefined' ? (item.active ? 1 : 0) : (typeof p.is_active !== 'undefined' ? p.is_active : 1))
-          ),
-     
-     
-        };
-        persist('pasar', setPasar, prev => [...prev, mapped]);
-        return mapped;
-      }
-    } catch (err) {
-      // fallback to local
-    }
-
-    const newItem: Pasar = { ...p, id: uid() };
-    persist('pasar', setPasar, prev => [...prev, newItem]);
-    return newItem;
-  }, [persist]);
-
-  /* ===== Fetch dari API (Read only) ===== */
   const refreshPasar = useCallback(async () => {
+    if (!getAccessToken()) return;
+
     try {
-      const base = ((import.meta as any).env?.VITE_API_BASE_URL as string) || 'http://127.0.0.1:8080';
-      const res = await fetch(`${base}/v1/pasar`);
-      if (!res.ok) return;
-      const body = await res.json();
-      const data = body?.data ?? body;
-      if (!Array.isArray(data)) return;
-
-      const mapped: Pasar[] = data.map((item: any) => ({
-        id: item.id ?? item._id ?? item.pasar_id ?? uid(),
-        nama: item.nama ?? item.name ?? '',
-        longitude: Number(item.longitude ?? item.lng ?? item.lon ?? 0),
-        latitude: Number(item.latitude ?? item.lat ?? 0),
-        alamat: item.alamat ?? item.address ?? '',
-        is_active: Number(item.is_active ?? item.isActive ?? (item.active ? 1 : 0)),
-      }));
-
-      if (mapped.length > 0) {
-        setPasar(mapped);
-        save('pasar', mapped);
-      }
-    } catch (err) {
-      // gagal ambil, biarkan data lokal tetap
-      // console.error('refreshPasar error', err);
+      const mapped = await fetchPasarList();
+      setPasar(mapped);
+      save('pasar', mapped);
+    } catch {
+      // biarkan data lokal tetap jika API gagal
     }
   }, []);
+
+  const createPasar = useCallback(async (p: Omit<Pasar, 'id'>): Promise<Pasar> => {
+    const created = await createPasarApi(p);
+    const mapped: Pasar = {
+      ...created,
+      longitude: p.longitude,
+      latitude: p.latitude,
+    };
+    persist('pasar', setPasar, prev => [...prev, mapped]);
+    return mapped;
+  }, [persist]);
+
+  const updatePasar = useCallback(async (id: string, p: Partial<Pasar>): Promise<Pasar> => {
+    const existing = pasar.find(x => x.id === id);
+    const updated = await updatePasarApi(id, p);
+    const mapped: Pasar = {
+      ...updated,
+      longitude: p.longitude ?? existing?.longitude ?? 0,
+      latitude: p.latitude ?? existing?.latitude ?? 0,
+    };
+    persist('pasar', setPasar, prev => prev.map(x => x.id === id ? mapped : x));
+    return mapped;
+  }, [persist, pasar]);
+
+  const deletePasar = useCallback(async (id: string): Promise<void> => {
+    await deletePasarApi(id);
+    persist('pasar', setPasar, prev => prev.map(x => x.id === id ? { ...x, is_active: 0 } : x));
+  }, [persist]);
 
   const refreshKomoditas = useCallback(async () => {
     try {
@@ -343,11 +322,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  // Jalankan sekali saat provider mount
+  // Jalankan sekali saat provider mount (komoditas saja; pasar di-load di PasarPage)
   useEffect(() => {
-    void refreshPasar();
     void refreshKomoditas();
-  }, [refreshPasar, refreshKomoditas]);
+  }, [refreshKomoditas]);
 
   /* ===== CRUD Komoditas ===== */
   const addKomoditas = (k: Omit<Komoditas, 'id'>) => persist('komoditas', setKomoditas, prev => [...prev, { ...k, id: uid() }]);
