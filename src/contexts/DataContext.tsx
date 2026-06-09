@@ -4,9 +4,11 @@
  * Komoditas Dijual, Harga Rutin, dan Harga Pelaporan.
  * Data disimpan di localStorage untuk persistensi prototype.
  */
-import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, useRef } from 'react';
 import type { Pasar, Komoditas, TempatUsaha, KomoditasDijual, HargaRutin, HargaPelaporan, KelasKomoditas, PeriodeUnit } from '@/types';
 import { PERIODE_TO_DAYS } from '@/types';
+import { apiFetch } from '@/lib/api';
+import { pasarApi } from '@/lib/pasar-api';
 
 /* ===== Helper Functions ===== */
 
@@ -38,9 +40,9 @@ interface DataContextType {
   hargaRutin: HargaRutin[]; setHargaRutin: React.Dispatch<React.SetStateAction<HargaRutin[]>>;
   hargaPelaporan: HargaPelaporan[];
   addPasar: (p: Omit<Pasar, 'id'>) => void;
-  createPasar: (p: Omit<Pasar, 'id'>) => Promise<Pasar | null>;
-  updatePasar: (id: string, p: Partial<Pasar>) => void;
-  deletePasar: (id: string) => void;
+  createPasar: (p: Omit<Pasar, 'id'>) => Promise<Pasar>;
+  updatePasar: (id: string, p: Partial<Pasar>) => Promise<Pasar>;
+  deletePasar: (id: string) => Promise<void>;
   addKomoditas: (k: Omit<Komoditas, 'id'>) => void;
   updateKomoditas: (id: string, k: Partial<Komoditas>) => void;
   deleteKomoditas: (id: string) => void;
@@ -247,6 +249,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [komoditasDijual, setKomoditasDijual] = useState<KomoditasDijual[]>(() => load('komoditasDijual', defaults.mockKomoditasDijual));
   const [hargaRutin, setHargaRutin] = useState<HargaRutin[]>(() => load('hargaRutin', defaults.mockHargaRutin));
 
+  const pasarRefreshInFlight = useRef<Promise<void> | null>(null);
+  const komoditasRefreshInFlight = useRef<Promise<void> | null>(null);
+
   const persist = useCallback(<T,>(key: string, setter: React.Dispatch<React.SetStateAction<T[]>>, updater: (prev: T[]) => T[]) => {
     setter(prev => {
       const next = updater(prev);
@@ -255,101 +260,84 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, []);
 
-  /* ===== CRUD Pasar ===== */
+  /* ===== CRUD Pasar (via /v1/admin/pasar) ===== */
   const addPasar = (p: Omit<Pasar, 'id'>) => persist('pasar', setPasar, prev => [...prev, { ...p, id: uid() }]);
-  const updatePasar = (id: string, p: Partial<Pasar>) => persist('pasar', setPasar, prev => prev.map(x => x.id === id ? { ...x, ...p } : x));
-  const deletePasar = (id: string) => persist('pasar', setPasar, prev => prev.filter(x => x.id !== id));
 
-  const createPasar = useCallback(async (p: Omit<Pasar, 'id'>): Promise<Pasar | null> => {
-    try {
-      const base = ((import.meta as any).env?.VITE_API_BASE_URL as string) || 'http://127.0.0.1:8080';
-      const res = await fetch(`${base}/v1/pasar`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(p),
-      });
-      if (res.ok) {
-        const body = await res.json();
-        const item = (body?.data ?? body) as any;
-        const mapped: Pasar = {
-          id: item.id ?? item._id ?? item.pasar_id ?? uid(),
-          nama: item.nama ?? item.name ?? p.nama,
-          longitude: Number(item.longitude ?? item.lng ?? item.lon ?? p.longitude ?? 0),
-          latitude: Number(item.latitude ?? item.lat ?? p.latitude ?? 0),
-          alamat: item.alamat ?? item.address ?? p.alamat ?? '',
-          is_active: Number(item.is_active ?? item.isActive ?? (item.active ? 1 : 0) ?? p.is_active ?? 1),
-        };
-        persist('pasar', setPasar, prev => [...prev, mapped]);
-        return mapped;
-      }
-    } catch (err) {
-      // fallback to local
-    }
-
-    const newItem: Pasar = { ...p, id: uid() };
-    persist('pasar', setPasar, prev => [...prev, newItem]);
-    return newItem;
-  }, [persist]);
-
-  /* ===== Fetch dari API (Read only) ===== */
   const refreshPasar = useCallback(async () => {
-    try {
-      const base = ((import.meta as any).env?.VITE_API_BASE_URL as string) || 'http://127.0.0.1:8080';
-      const res = await fetch(`${base}/v1/pasar`);
-      if (!res.ok) return;
-      const body = await res.json();
-      const data = body?.data ?? body;
-      if (!Array.isArray(data)) return;
+    if (!localStorage.getItem('access_token')) return;
+    if (pasarRefreshInFlight.current) return pasarRefreshInFlight.current;
 
-      const mapped: Pasar[] = data.map((item: any) => ({
-        id: item.id ?? item._id ?? item.pasar_id ?? uid(),
-        nama: item.nama ?? item.name ?? '',
-        longitude: Number(item.longitude ?? item.lng ?? item.lon ?? 0),
-        latitude: Number(item.latitude ?? item.lat ?? 0),
-        alamat: item.alamat ?? item.address ?? '',
-        is_active: Number(item.is_active ?? item.isActive ?? (item.active ? 1 : 0)),
-      }));
-
-      if (mapped.length > 0) {
+    pasarRefreshInFlight.current = (async () => {
+      try {
+        const mapped = await pasarApi.list();
         setPasar(mapped);
         save('pasar', mapped);
+      } catch {
+        // biarkan data lokal tetap jika API gagal
+      } finally {
+        pasarRefreshInFlight.current = null;
       }
-    } catch (err) {
-      // gagal ambil, biarkan data lokal tetap
-      // console.error('refreshPasar error', err);
-    }
+    })();
+
+    return pasarRefreshInFlight.current;
   }, []);
+
+  const createPasar = useCallback(async (p: Omit<Pasar, 'id'>): Promise<Pasar> => {
+    const created = await pasarApi.create(p);
+    const mapped: Pasar = {
+      ...created,
+      longitude: p.longitude,
+      latitude: p.latitude,
+    };
+    persist('pasar', setPasar, prev => [...prev, mapped]);
+    return mapped;
+  }, [persist]);
+
+  const updatePasar = useCallback(async (id: string, p: Partial<Pasar>): Promise<Pasar> => {
+    const updated = await pasarApi.update(id, p);
+    const existing = pasar.find(x => x.id === id);
+    const mapped: Pasar = {
+      ...updated,
+      longitude: p.longitude ?? existing?.longitude ?? 0,
+      latitude: p.latitude ?? existing?.latitude ?? 0,
+    };
+    persist('pasar', setPasar, prev => prev.map(x => x.id === id ? mapped : x));
+    return mapped;
+  }, [persist, pasar]);
+
+  const deletePasar = useCallback(async (id: string): Promise<void> => {
+    await pasarApi.delete(id);
+    persist('pasar', setPasar, prev => prev.map(x => x.id === id ? { ...x, is_active: 0 } : x));
+  }, [persist]);
 
   const refreshKomoditas = useCallback(async () => {
-    try {
-      const base = ((import.meta as any).env?.VITE_API_BASE_URL as string) || 'http://127.0.0.1:8080';
-      const res = await fetch(`${base}/v1/komoditas`);
-      if (!res.ok) return;
-      const body = await res.json();
-      const data = body?.data ?? body;
-      if (!Array.isArray(data)) return;
+    if (!localStorage.getItem('access_token')) return;
+    if (komoditasRefreshInFlight.current) return komoditasRefreshInFlight.current;
 
-      const mapped: Komoditas[] = data.map((item: any) => ({
-        id: item.id ?? item._id ?? item.komoditas_id ?? uid(),
-        nama: item.nama ?? item.name ?? '',
-        satuan_dasar: (item.satuan_dasar ?? item.satuan ?? 'kg') as any,
-        gambar: item.gambar ?? item.image ?? '',
-      }));
+    komoditasRefreshInFlight.current = (async () => {
+      try {
+        const res = await apiFetch<{ data: Array<Record<string, unknown>> }>('/v1/admin/komoditas?limit=500');
+        const data = res.data ?? [];
+        if (!Array.isArray(data)) return;
 
-      if (mapped.length > 0) {
+        const mapped: Komoditas[] = data.map((item) => ({
+          id: String(item.id ?? uid()),
+          nama: String(item.nama ?? item.name ?? ''),
+          satuan_dasar: (item.satuan_dasar ?? item.satuan ?? 'kg') as Komoditas['satuan_dasar'],
+          gambar: String(item.gambar ?? item.image ?? ''),
+        }));
+
         setKomoditas(mapped);
         save('komoditas', mapped);
+      } catch {
+        // biarkan data lokal tetap jika API gagal
+      } finally {
+        komoditasRefreshInFlight.current = null;
       }
-    } catch (err) {
-      // gagal ambil, biarkan data lokal tetap
-    }
-  }, []);
+    })();
 
-  // Jalankan sekali saat provider mount
-  useEffect(() => {
-    void refreshPasar();
-    void refreshKomoditas();
-  }, [refreshPasar, refreshKomoditas]);
+    return komoditasRefreshInFlight.current;
+  }, []);
 
   /* ===== CRUD Komoditas ===== */
   const addKomoditas = (k: Omit<Komoditas, 'id'>) => persist('komoditas', setKomoditas, prev => [...prev, { ...k, id: uid() }]);

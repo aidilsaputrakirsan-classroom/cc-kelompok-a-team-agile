@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
+import { getApiBaseUrl } from '@/lib/api';
 
 type AuthMode = 'api' | 'hardcode';
 
@@ -43,8 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return false;
       }
 
-      const base = ((import.meta as any).env?.VITE_API_BASE_URL as string) || 'http://127.0.0.1:8080';
-      const res = await fetch(`${base}/v1/auth/login`, {
+      const res = await fetch(`${getApiBaseUrl()}/v1/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),

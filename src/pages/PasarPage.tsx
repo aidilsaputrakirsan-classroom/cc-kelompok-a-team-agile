@@ -3,7 +3,7 @@
  * Menampilkan daftar pasar dalam bentuk kartu (mobile) atau tabel (desktop).
  * Mendukung pencarian, filter status, sorting, ekspor CSV, dan impor CSV.
  */
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useData } from "@/contexts/DataContext";
 import type { Pasar } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,6 +21,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -71,7 +72,7 @@ const emptyPasar = {
 };
 
 export default function PasarPage() {
-  const { pasar, addPasar, createPasar, updatePasar, deletePasar } = useData();
+  const { pasar, createPasar, updatePasar, deletePasar, refreshPasar } = useData();
   const isMobile = useIsMobile();
 
   /* ===== State pencarian, filter, sorting ===== */
@@ -82,7 +83,21 @@ export default function PasarPage() {
   const [sortField, setSortField] = useState<SortField>("nama");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      setLoading(true);
+      await refreshPasar();
+      if (!cancelled) setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshPasar]);
 
   /* ===== Filter & Sort data ===== */
   const filtered = pasar
@@ -149,19 +164,30 @@ export default function PasarPage() {
       toast.error("Nama pasar wajib diisi");
       return;
     }
-    if (editing) {
-      updatePasar(editing.id, form);
-      toast.success("Pasar diperbarui");
-    } else {
-      try {
+    setSubmitting(true);
+    try {
+      if (editing) {
+        await updatePasar(editing.id, form);
+        toast.success("Pasar diperbarui");
+      } else {
         await createPasar(form);
         toast.success("Pasar ditambahkan");
-      } catch (err) {
-        // fallback handled in createPasar
-        toast.success("Pasar ditambahkan (lokal)");
       }
+      setDialogOpen(false);
+    } catch {
+      toast.error(editing ? "Gagal memperbarui pasar" : "Gagal menambahkan pasar");
+    } finally {
+      setSubmitting(false);
     }
-    setDialogOpen(false);
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deletePasar(id);
+      toast.success("Pasar dinonaktifkan");
+    } catch {
+      toast.error("Gagal menghapus pasar");
+    }
   };
 
   /* ===== Ekspor & Impor CSV ===== */
@@ -192,18 +218,23 @@ export default function PasarPage() {
       let count = 0;
       for (const r of rows) {
         if (r["Nama"]?.trim()) {
-          await createPasar({
-            nama: r["Nama"].trim(),
-            alamat: r["Alamat"] || "",
-            longitude: parseFloat(r["Longitude"]) || 0,
-            latitude: parseFloat(r["Latitude"]) || 0,
-            is_active: r["Aktif"] === "0" ? 0 : 1,
-          });
-          count++;
+          try {
+            await createPasar({
+              nama: r["Nama"].trim(),
+              alamat: r["Alamat"] || "",
+              longitude: parseFloat(r["Longitude"]) || 0,
+              latitude: parseFloat(r["Latitude"]) || 0,
+              is_active: r["Aktif"] === "0" ? 0 : 1,
+            });
+            count++;
+          } catch {
+            // lewati baris yang gagal
+          }
         }
       }
       toast.success(`${count} pasar diimpor`);
-    } catch (err) {
+      await refreshPasar();
+    } catch {
       toast.error("Gagal mengimpor CSV");
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -257,6 +288,11 @@ export default function PasarPage() {
                 <DialogTitle>
                   {editing ? "Edit Pasar" : "Tambah Pasar"}
                 </DialogTitle>
+                <DialogDescription>
+                  {editing
+                    ? "Perbarui informasi pasar yang sudah terdaftar."
+                    : "Isi formulir untuk menambahkan pasar baru."}
+                </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
@@ -317,9 +353,10 @@ export default function PasarPage() {
                 </div>
                 <Button
                   type="submit"
+                  disabled={submitting}
                   className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
                 >
-                  {editing ? "Perbarui" : "Simpan"}
+                  {submitting ? "Menyimpan..." : editing ? "Perbarui" : "Simpan"}
                 </Button>
               </form>
             </DialogContent>
@@ -360,7 +397,11 @@ export default function PasarPage() {
       </div>
 
       {/* ===== Tampilan Data ===== */}
-      {isMobile ? (
+      {loading ? (
+        <p className="text-center text-muted-foreground py-8 text-sm">
+          Memuat data pasar...
+        </p>
+      ) : isMobile ? (
         /* --- Tampilan kartu untuk mobile --- */
         <div className="space-y-2">
           {filtered.map((p) => (
@@ -400,16 +441,13 @@ export default function PasarPage() {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Hapus Pasar?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Data "{p.nama}" akan dihapus permanen.
+                            Pasar "{p.nama}" akan dinonaktifkan.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Batal</AlertDialogCancel>
                           <AlertDialogAction
-                            onClick={() => {
-                              deletePasar(p.id);
-                              toast.success("Dihapus");
-                            }}
+                            onClick={() => void handleDelete(p.id)}
                           >
                             Hapus
                           </AlertDialogAction>
@@ -496,16 +534,13 @@ export default function PasarPage() {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Hapus Pasar?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Data "{p.nama}" akan dihapus permanen.
+                            Pasar "{p.nama}" akan dinonaktifkan.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Batal</AlertDialogCancel>
                           <AlertDialogAction
-                            onClick={() => {
-                              deletePasar(p.id);
-                              toast.success("Dihapus");
-                            }}
+                            onClick={() => void handleDelete(p.id)}
                           >
                             Hapus
                           </AlertDialogAction>
