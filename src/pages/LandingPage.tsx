@@ -932,7 +932,7 @@ export default function LandingPage() {
                   )}
                 </div>
 
-                {/* ===== KOMODITAS CARDS ===== */}
+                {/* ===== KOMODITAS CARD ===== */}
                 {activeStat === "komoditas" && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {overallCards.filter((c) => c.latest).length > 0 ? (overallCards.filter((c) => c.latest).map((card, index) => (
