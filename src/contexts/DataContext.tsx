@@ -19,6 +19,12 @@ import {
   updatePasarApi,
   deletePasarApi,
 } from '@/lib/pasar-api';
+import {
+  fetchTempatUsahaList,
+  createTempatUsahaApi,
+  updateTempatUsahaApi,
+  deleteTempatUsahaApi,
+} from '@/lib/tempat-usaha-api';
 import { getAccessToken } from '@/lib/api';
 
 /* ===== Helper Functions ===== */
@@ -44,6 +50,7 @@ function uid() { return crypto.randomUUID(); }
 interface DataContextType {
   refreshPasar: () => Promise<void>;
   refreshKomoditas: () => Promise<void>;
+  refreshTempatUsaha: () => Promise<void>;
   pasar: Pasar[]; setPasar: React.Dispatch<React.SetStateAction<Pasar[]>>;
   komoditas: Komoditas[]; setKomoditas: React.Dispatch<React.SetStateAction<Komoditas[]>>;
   tempatUsaha: TempatUsaha[]; setTempatUsaha: React.Dispatch<React.SetStateAction<TempatUsaha[]>>;
@@ -59,8 +66,9 @@ interface DataContextType {
   updateKomoditas: (id: string, k: Partial<Komoditas>, imageFile?: File | null) => Promise<Komoditas>;
   deleteKomoditas: (id: string) => void;
   addTempatUsaha: (t: Omit<TempatUsaha, 'id'>) => void;
-  updateTempatUsaha: (id: string, t: Partial<TempatUsaha>) => void;
-  deleteTempatUsaha: (id: string) => void;
+  createTempatUsaha: (t: Omit<TempatUsaha, 'id'>) => Promise<TempatUsaha>;
+  updateTempatUsaha: (id: string, t: Partial<TempatUsaha>) => Promise<TempatUsaha>;
+  deleteTempatUsaha: (id: string) => Promise<void>;
   addKomoditasDijual: (k: Omit<KomoditasDijual, 'id'>) => void;
   updateKomoditasDijual: (id: string, k: Partial<KomoditasDijual>) => void;
   deleteKomoditasDijual: (id: string) => void;
@@ -367,10 +375,55 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const deleteKomoditas = (id: string) => persist('komoditas', setKomoditas, prev => prev.filter(x => x.id !== id));
 
-  /* ===== CRUD Tempat Usaha ===== */
+  /* ===== CRUD Tempat Usaha (via /v1/admin/tempat-usaha) ===== */
   const addTempatUsaha = (t: Omit<TempatUsaha, 'id'>) => persist('tempatUsaha', setTempatUsaha, prev => [...prev, { ...t, id: uid() }]);
-  const updateTempatUsaha = (id: string, t: Partial<TempatUsaha>) => persist('tempatUsaha', setTempatUsaha, prev => prev.map(x => x.id === id ? { ...x, ...t } : x));
-  const deleteTempatUsaha = (id: string) => persist('tempatUsaha', setTempatUsaha, prev => prev.filter(x => x.id !== id));
+
+  const refreshTempatUsaha = useCallback(async () => {
+    if (!getAccessToken()) return;
+
+    try {
+      const mapped = await fetchTempatUsahaList();
+      setTempatUsaha(prev => {
+        const merged = mapped.map(item => {
+          const existing = prev.find(x => x.id === item.id);
+          return {
+            ...item,
+            nama_narahubung: existing?.nama_narahubung ?? item.nama_narahubung,
+            nomor_narahubung: existing?.nomor_narahubung ?? item.nomor_narahubung,
+            berjualan_sejak: existing?.berjualan_sejak ?? item.berjualan_sejak,
+          };
+        });
+        save('tempatUsaha', merged);
+        return merged;
+      });
+    } catch {
+      // biarkan data lokal tetap jika API gagal
+    }
+  }, []);
+
+  const createTempatUsaha = useCallback(async (t: Omit<TempatUsaha, 'id'>): Promise<TempatUsaha> => {
+    const created = await createTempatUsahaApi(t);
+    persist('tempatUsaha', setTempatUsaha, prev => [...prev, created]);
+    return created;
+  }, [persist]);
+
+  const updateTempatUsaha = useCallback(async (id: string, t: Partial<TempatUsaha>): Promise<TempatUsaha> => {
+    const existing = tempatUsaha.find(x => x.id === id);
+    const updated = await updateTempatUsahaApi(id, t);
+    const mapped: TempatUsaha = {
+      ...updated,
+      nama_narahubung: t.nama_narahubung ?? existing?.nama_narahubung ?? updated.nama_narahubung,
+      nomor_narahubung: t.nomor_narahubung ?? existing?.nomor_narahubung ?? updated.nomor_narahubung,
+      berjualan_sejak: t.berjualan_sejak ?? existing?.berjualan_sejak ?? updated.berjualan_sejak,
+    };
+    persist('tempatUsaha', setTempatUsaha, prev => prev.map(x => x.id === id ? mapped : x));
+    return mapped;
+  }, [persist, tempatUsaha]);
+
+  const deleteTempatUsaha = useCallback(async (id: string): Promise<void> => {
+    await deleteTempatUsahaApi(id);
+    persist('tempatUsaha', setTempatUsaha, prev => prev.map(x => x.id === id ? { ...x, is_active: 0 } : x));
+  }, [persist]);
 
   /* ===== CRUD Komoditas Dijual ===== */
   /** Menghitung standardized stock per hari */
@@ -515,10 +568,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <DataContext.Provider value={{
       pasar, setPasar, komoditas, setKomoditas, tempatUsaha, setTempatUsaha,
       komoditasDijual, setKomoditasDijual, hargaRutin, setHargaRutin, hargaPelaporan,
-      refreshPasar, refreshKomoditas,
+      refreshPasar, refreshKomoditas, refreshTempatUsaha,
       addPasar, createPasar, updatePasar, deletePasar,
       addKomoditas, createKomoditas, updateKomoditas, deleteKomoditas,
-      addTempatUsaha, updateTempatUsaha, deleteTempatUsaha,
+      addTempatUsaha, createTempatUsaha, updateTempatUsaha, deleteTempatUsaha,
       addKomoditasDijual, updateKomoditasDijual, deleteKomoditasDijual,
       addHargaRutin, updateHargaRutin, deleteHargaRutin, calculateHargaPelaporan,
       getKelasForTU, getKelasForKomoditasInPasar,

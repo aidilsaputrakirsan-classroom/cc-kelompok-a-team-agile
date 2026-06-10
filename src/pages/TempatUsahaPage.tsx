@@ -3,7 +3,7 @@
  * Menampilkan daftar toko/pedagang beserta komoditas yang dijual.
  * Sub-CRUD komoditas dijual dengan klasifikasi kelas otomatis (distribusi normal).
  */
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useData } from '@/contexts/DataContext';
 import type { TempatUsaha, KomoditasDijual, PeriodeUnit } from '@/types';
 import { POLA_DISTRIBUSI_OPTIONS, PERIODE_UNIT_OPTIONS, SATUAN_DASAR_OPTIONS } from '@/types';
@@ -48,11 +48,17 @@ const getKelasStyle = (kelas: string) => {
 };
 
 export default function TempatUsahaPage() {
-  const { tempatUsaha, addTempatUsaha, updateTempatUsaha, deleteTempatUsaha, pasar, komoditas, komoditasDijual, addKomoditasDijual, updateKomoditasDijual, deleteKomoditasDijual, getKelasForTU } = useData();
+  const {
+    tempatUsaha, createTempatUsaha, updateTempatUsaha, deleteTempatUsaha,
+    refreshTempatUsaha, refreshPasar,
+    pasar, komoditas, komoditasDijual, addKomoditasDijual, updateKomoditasDijual, deleteKomoditasDijual, getKelasForTU,
+  } = useData();
   const isMobile = useIsMobile();
 
   /* ===== State ===== */
   const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<TempatUsaha | null>(null);
   const [form, setForm] = useState<Omit<TempatUsaha, 'id'>>(emptyTU);
@@ -67,6 +73,18 @@ export default function TempatUsahaPage() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [berjualanDate, setBerjualanDate] = useState<Date | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      setLoading(true);
+      await Promise.all([refreshPasar(), refreshTempatUsaha()]);
+      if (!cancelled) setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshPasar, refreshTempatUsaha]);
 
   /* ===== Filter & Sort ===== */
   const filtered = tempatUsaha
@@ -94,14 +112,36 @@ export default function TempatUsahaPage() {
     setBerjualanDate(t.berjualan_sejak ? new Date(t.berjualan_sejak) : undefined);
     setDialogOpen(true);
   };
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.nama.trim()) { toast.error('Nama wajib diisi'); return; }
+    if (!form.pasar_id) { toast.error('Pasar wajib dipilih'); return; }
     const narahubung = sameAsOwner ? form.nama_pemilik : form.nama_narahubung;
     const data = { ...form, nama_narahubung: narahubung, berjualan_sejak: berjualanDate ? format(berjualanDate, 'yyyy-MM-dd') : form.berjualan_sejak };
-    if (editing) { updateTempatUsaha(editing.id, data); toast.success('Diperbarui'); }
-    else { addTempatUsaha(data); toast.success('Ditambahkan'); }
-    setDialogOpen(false);
+    setSubmitting(true);
+    try {
+      if (editing) {
+        await updateTempatUsaha(editing.id, data);
+        toast.success('Diperbarui');
+      } else {
+        await createTempatUsaha(data);
+        toast.success('Ditambahkan');
+      }
+      setDialogOpen(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Gagal menyimpan tempat usaha');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteTempatUsaha(id);
+      toast.success('Dinonaktifkan');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Gagal menghapus tempat usaha');
+    }
   };
 
   /* ===== Ekspor & Impor CSV ===== */
@@ -113,22 +153,45 @@ export default function TempatUsahaPage() {
     ]);
     toast.success('Data diekspor');
   };
-  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; if (!file) return;
+  const readFileAsText = (file: File) => new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => {
-      const rows = parseCSV(reader.result as string);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsText(file);
+  });
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await readFileAsText(file);
+      const rows = parseCSV(text);
       let count = 0;
-      rows.forEach(r => {
+      for (const r of rows) {
         if (r['Nama']?.trim()) {
           const matchPasar = pasar.find(p => p.nama === r['Pasar']);
-          addTempatUsaha({ nama: r['Nama'].trim(), nama_pemilik: r['Pemilik'] || '', nama_narahubung: '', nomor_narahubung: '', berjualan_sejak: r['Berjualan Sejak'] || '', is_active: r['Aktif'] === '0' ? 0 : 1, pasar_id: matchPasar?.id || '' });
-          count++;
+          if (!matchPasar) continue;
+          try {
+            await createTempatUsaha({
+              nama: r['Nama'].trim(),
+              nama_pemilik: r['Pemilik'] || '',
+              nama_narahubung: '',
+              nomor_narahubung: '',
+              berjualan_sejak: r['Berjualan Sejak'] || '',
+              is_active: r['Aktif'] === '0' ? 0 : 1,
+              pasar_id: matchPasar.id,
+            });
+            count++;
+          } catch {
+            // lewati baris yang gagal
+          }
         }
-      });
+      }
       toast.success(`${count} tempat usaha diimpor`);
-    };
-    reader.readAsText(file);
+      await refreshTempatUsaha();
+    } catch {
+      toast.error('Gagal membaca file CSV');
+    }
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -405,8 +468,8 @@ export default function TempatUsahaPage() {
                   <Switch checked={form.is_active === 1} onCheckedChange={c => setForm({ ...form, is_active: c ? 1 : 0 })} />
                   <Label>Aktif</Label>
                 </div>
-                <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-                  {editing ? 'Perbarui' : 'Simpan'}
+                <Button type="submit" disabled={submitting} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+                  {submitting ? 'Menyimpan...' : editing ? 'Perbarui' : 'Simpan'}
                 </Button>
               </form>
             </DialogContent>
@@ -438,6 +501,9 @@ export default function TempatUsahaPage() {
       </div>
 
       {/* Daftar */}
+      {loading ? (
+        <p className="text-center text-muted-foreground py-8 text-sm">Memuat data...</p>
+      ) : (
       <div className="space-y-2">
         {filtered.map(t => {
           const pas = pasar.find(p => p.id === t.pasar_id);
@@ -469,7 +535,7 @@ export default function TempatUsahaPage() {
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader><AlertDialogTitle>Hapus?</AlertDialogTitle><AlertDialogDescription>Data "{t.nama}" akan dihapus.</AlertDialogDescription></AlertDialogHeader>
-                        <AlertDialogFooter><AlertDialogCancel>Batal</AlertDialogCancel><AlertDialogAction onClick={() => { deleteTempatUsaha(t.id); toast.success('Dihapus'); }}>Hapus</AlertDialogAction></AlertDialogFooter>
+                        <AlertDialogFooter><AlertDialogCancel>Batal</AlertDialogCancel><AlertDialogAction onClick={() => void handleDelete(t.id)}>Hapus</AlertDialogAction></AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
                     <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -481,6 +547,7 @@ export default function TempatUsahaPage() {
         })}
         {filtered.length === 0 && <p className="text-center text-muted-foreground py-8 text-sm">Tidak ada data.</p>}
       </div>
+      )}
     </div>
   );
 }

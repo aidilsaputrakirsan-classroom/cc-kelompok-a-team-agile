@@ -10,6 +10,7 @@ import { useData } from "@/contexts/DataContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import PredictionPriceSection from "@/components/landing/PredictionPriceSection";
 import PublicNavbar from "@/components/PublicNavbar";
 import {
   Command,
@@ -1185,6 +1186,8 @@ export default function LandingPage() {
           )}
         </div>
       </section>
+
+      <PredictionPriceSection />
 
       {/* visualisasi harga terkini */}
       {/* <section
