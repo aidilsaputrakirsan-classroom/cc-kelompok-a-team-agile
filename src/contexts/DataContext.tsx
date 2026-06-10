@@ -6,7 +6,7 @@
  */
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
 import type { Pasar, Komoditas, TempatUsaha, KomoditasDijual, HargaRutin, HargaPelaporan, KelasKomoditas, PeriodeUnit } from '@/types';
-import { PERIODE_TO_DAYS } from '@/types';
+import { calcStandardizedStockPerDay } from '@/types';
 import {
   fetchKomoditasList,
   createKomoditasApi,
@@ -25,6 +25,12 @@ import {
   updateTempatUsahaApi,
   deleteTempatUsahaApi,
 } from '@/lib/tempat-usaha-api';
+import {
+  fetchKomoditasDijualList,
+  createKomoditasDijualApi,
+  updateKomoditasDijualApi,
+  deleteKomoditasDijualApi,
+} from '@/lib/komoditas-dijual-api';
 import { getAccessToken } from '@/lib/api';
 
 /* ===== Helper Functions ===== */
@@ -51,6 +57,7 @@ interface DataContextType {
   refreshPasar: () => Promise<void>;
   refreshKomoditas: () => Promise<void>;
   refreshTempatUsaha: () => Promise<void>;
+  refreshKomoditasDijual: (tempatUsahaId?: string) => Promise<void>;
   pasar: Pasar[]; setPasar: React.Dispatch<React.SetStateAction<Pasar[]>>;
   komoditas: Komoditas[]; setKomoditas: React.Dispatch<React.SetStateAction<Komoditas[]>>;
   tempatUsaha: TempatUsaha[]; setTempatUsaha: React.Dispatch<React.SetStateAction<TempatUsaha[]>>;
@@ -70,8 +77,9 @@ interface DataContextType {
   updateTempatUsaha: (id: string, t: Partial<TempatUsaha>) => Promise<TempatUsaha>;
   deleteTempatUsaha: (id: string) => Promise<void>;
   addKomoditasDijual: (k: Omit<KomoditasDijual, 'id'>) => void;
-  updateKomoditasDijual: (id: string, k: Partial<KomoditasDijual>) => void;
-  deleteKomoditasDijual: (id: string) => void;
+  createKomoditasDijual: (k: Omit<KomoditasDijual, 'id'>) => Promise<KomoditasDijual>;
+  updateKomoditasDijual: (id: string, k: Partial<KomoditasDijual>) => Promise<KomoditasDijual>;
+  deleteKomoditasDijual: (id: string) => Promise<void>;
   addHargaRutin: (h: Omit<HargaRutin, 'id'>) => void;
   updateHargaRutin: (id: string, h: Partial<HargaRutin>) => void;
   deleteHargaRutin: (id: string) => void;
@@ -425,28 +433,60 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     persist('tempatUsaha', setTempatUsaha, prev => prev.map(x => x.id === id ? { ...x, is_active: 0 } : x));
   }, [persist]);
 
-  /* ===== CRUD Komoditas Dijual ===== */
-  /** Menghitung standardized stock per hari */
-  const calcStockPerDay = (k: { nilai_stok: number; nilai_periode: number; periode_unit: PeriodeUnit }) => {
-    const totalDays = k.nilai_periode * PERIODE_TO_DAYS[k.periode_unit];
-    return totalDays > 0 ? Math.round((k.nilai_stok / totalDays) * 100) / 100 : 0;
-  };
+  /* ===== CRUD Komoditas Dijual (via /v1/admin/komoditas-dijual) ===== */
+
+  const refreshKomoditasDijual = useCallback(async (tempatUsahaId?: string) => {
+    if (!getAccessToken()) return;
+
+    try {
+      const mapped = await fetchKomoditasDijualList(
+        tempatUsahaId ? { id_tempat_usaha: tempatUsahaId } : undefined,
+      );
+
+      setKomoditasDijual(prev => {
+        if (tempatUsahaId) {
+          const others = prev.filter(kd => kd.tempat_usaha_id !== tempatUsahaId);
+          const next = [...others, ...mapped];
+          save('komoditasDijual', next);
+          return next;
+        }
+        save('komoditasDijual', mapped);
+        return mapped;
+      });
+    } catch {
+      // biarkan data lokal tetap jika API gagal
+    }
+  }, []);
 
   const addKomoditasDijual = (k: Omit<KomoditasDijual, 'id'>) => {
     const newItem = { ...k, id: uid() };
-    newItem.standardized_stock_periode = calcStockPerDay(newItem);
+    newItem.standardized_stock_periode = calcStandardizedStockPerDay(newItem.nilai_stok, newItem.nilai_periode, newItem.periode_unit);
     persist('komoditasDijual', setKomoditasDijual, prev => [...prev, newItem]);
   };
 
-  const updateKomoditasDijual = (id: string, k: Partial<KomoditasDijual>) => {
-    persist('komoditasDijual', setKomoditasDijual, prev => prev.map(x => {
-      if (x.id !== id) return x;
-      const updated = { ...x, ...k };
-      updated.standardized_stock_periode = calcStockPerDay(updated);
-      return updated;
-    }));
-  };
-  const deleteKomoditasDijual = (id: string) => persist('komoditasDijual', setKomoditasDijual, prev => prev.filter(x => x.id !== id));
+  const createKomoditasDijual = useCallback(async (k: Omit<KomoditasDijual, 'id'>): Promise<KomoditasDijual> => {
+    const withStd: Omit<KomoditasDijual, 'id'> = {
+      ...k,
+      standardized_stock_periode: calcStandardizedStockPerDay(k.nilai_stok, k.nilai_periode, k.periode_unit),
+    };
+    const created = await createKomoditasDijualApi(withStd);
+    persist('komoditasDijual', setKomoditasDijual, prev => [...prev, created]);
+    return created;
+  }, [persist]);
+
+  const updateKomoditasDijual = useCallback(async (id: string, k: Partial<KomoditasDijual>): Promise<KomoditasDijual> => {
+    if (!komoditasDijual.find(x => x.id === id)) {
+      throw new Error('Komoditas dijual tidak ditemukan');
+    }
+    const updated = await updateKomoditasDijualApi(id, k);
+    persist('komoditasDijual', setKomoditasDijual, prev => prev.map(x => x.id === id ? updated : x));
+    return updated;
+  }, [komoditasDijual, persist]);
+
+  const deleteKomoditasDijual = useCallback(async (id: string): Promise<void> => {
+    await deleteKomoditasDijualApi(id);
+    persist('komoditasDijual', setKomoditasDijual, prev => prev.filter(x => x.id !== id));
+  }, [persist]);
 
   /* ===== CRUD Harga Rutin ===== */
   const addHargaRutin = (h: Omit<HargaRutin, 'id'>) => persist('hargaRutin', setHargaRutin, prev => [...prev, { ...h, id: uid() }]);
@@ -568,11 +608,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <DataContext.Provider value={{
       pasar, setPasar, komoditas, setKomoditas, tempatUsaha, setTempatUsaha,
       komoditasDijual, setKomoditasDijual, hargaRutin, setHargaRutin, hargaPelaporan,
-      refreshPasar, refreshKomoditas, refreshTempatUsaha,
+      refreshPasar, refreshKomoditas, refreshTempatUsaha, refreshKomoditasDijual,
       addPasar, createPasar, updatePasar, deletePasar,
       addKomoditas, createKomoditas, updateKomoditas, deleteKomoditas,
       addTempatUsaha, createTempatUsaha, updateTempatUsaha, deleteTempatUsaha,
-      addKomoditasDijual, updateKomoditasDijual, deleteKomoditasDijual,
+      addKomoditasDijual, createKomoditasDijual, updateKomoditasDijual, deleteKomoditasDijual,
       addHargaRutin, updateHargaRutin, deleteHargaRutin, calculateHargaPelaporan,
       getKelasForTU, getKelasForKomoditasInPasar,
     }}>
