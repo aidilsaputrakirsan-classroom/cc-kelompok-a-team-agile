@@ -1885,7 +1885,7 @@ export default function LandingPage() {
 
                           <div className="flex items-center justify-between pt-0.5">
                             <span className="text-[11px] text-muted-foreground">
-                              Klik untuk lihat komoditas
+                              Klik untuk melihat komoditas
                             </span>
                             <ArrowRight className="h-3 w-3 text-primary" />
                           </div>
