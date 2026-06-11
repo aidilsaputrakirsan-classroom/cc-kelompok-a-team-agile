@@ -6,7 +6,7 @@
  */
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
 import type { Pasar, Komoditas, TempatUsaha, KomoditasDijual, HargaRutin, HargaPelaporan, KelasKomoditas, PeriodeUnit } from '@/types';
-import { PERIODE_TO_DAYS } from '@/types';
+import { calcStandardizedStockPerDay } from '@/types';
 import {
   fetchKomoditasList,
   createKomoditasApi,
@@ -31,26 +31,6 @@ import {
   updateKomoditasDijualApi,
   deleteKomoditasDijualApi,
 } from '@/lib/komoditas-dijual-api';
-import {
-  createPengumpulanDataApi,
-  dataUrlToFile,
-  decodeCatatan,
-  deletePengumpulanDataApi,
-  encodeCatatan,
-  fetchPengumpulanDataList,
-  finalizePengumpulanDataApi,
-  formatDateForApi,
-  parseApiDate,
-  updatePengumpulanDataApi,
-  uploadPengumpulanTandaTanganApi,
-  type HargaRutinReportGroup,
-} from '@/lib/pengumpulan-data-api';
-import {
-  createHargaRutinApi,
-  deleteHargaRutinApi,
-  fetchHargaRutinList,
-  updateHargaRutinApi,
-} from '@/lib/harga-rutin-api';
 import { getAccessToken } from '@/lib/api';
 import { hitungHargaStandar } from '@/types';
 
@@ -475,12 +455,30 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     persist('tempatUsaha', setTempatUsaha, prev => prev.map(x => x.id === id ? { ...x, is_active: 0 } : x));
   }, [persist]);
 
-  /* ===== CRUD Komoditas Dijual ===== */
-  /** Menghitung standardized stock per hari */
-  const calcStockPerDay = (k: { nilai_stok: number; nilai_periode: number; periode_unit: PeriodeUnit }) => {
-    const totalDays = k.nilai_periode * PERIODE_TO_DAYS[k.periode_unit];
-    return totalDays > 0 ? Math.round((k.nilai_stok / totalDays) * 100) / 100 : 0;
-  };
+  /* ===== CRUD Komoditas Dijual (via /v1/admin/komoditas-dijual) ===== */
+
+  const refreshKomoditasDijual = useCallback(async (tempatUsahaId?: string) => {
+    if (!getAccessToken()) return;
+
+    try {
+      const mapped = await fetchKomoditasDijualList(
+        tempatUsahaId ? { id_tempat_usaha: tempatUsahaId } : undefined,
+      );
+
+      setKomoditasDijual(prev => {
+        if (tempatUsahaId) {
+          const others = prev.filter(kd => kd.tempat_usaha_id !== tempatUsahaId);
+          const next = [...others, ...mapped];
+          save('komoditasDijual', next);
+          return next;
+        }
+        save('komoditasDijual', mapped);
+        return mapped;
+      });
+    } catch {
+      // biarkan data lokal tetap jika API gagal
+    }
+  }, []);
 
   const refreshKomoditasDijual = useCallback(async (tempatUsahaId?: string) => {
     if (!getAccessToken()) return;
@@ -507,34 +505,33 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addKomoditasDijual = (k: Omit<KomoditasDijual, 'id'>) => {
     const newItem = { ...k, id: uid() };
-    newItem.standardized_stock_periode = calcStockPerDay(newItem);
+    newItem.standardized_stock_periode = calcStandardizedStockPerDay(newItem.nilai_stok, newItem.nilai_periode, newItem.periode_unit);
     persist('komoditasDijual', setKomoditasDijual, prev => [...prev, newItem]);
   };
 
   const createKomoditasDijual = useCallback(async (k: Omit<KomoditasDijual, 'id'>): Promise<KomoditasDijual> => {
-    const payload: Omit<KomoditasDijual, 'id'> = {
+    const withStd: Omit<KomoditasDijual, 'id'> = {
       ...k,
-      standardized_stock_periode: calcStockPerDay(k),
+      standardized_stock_periode: calcStandardizedStockPerDay(k.nilai_stok, k.nilai_periode, k.periode_unit),
     };
-    const created = await createKomoditasDijualApi(payload);
+    const created = await createKomoditasDijualApi(withStd);
     persist('komoditasDijual', setKomoditasDijual, prev => [...prev, created]);
     return created;
   }, [persist]);
 
   const updateKomoditasDijual = useCallback(async (id: string, k: Partial<KomoditasDijual>): Promise<KomoditasDijual> => {
-    const existing = komoditasDijual.find(x => x.id === id);
-    if (!existing) {
+    if (!komoditasDijual.find(x => x.id === id)) {
       throw new Error('Komoditas dijual tidak ditemukan');
     }
-    const merged = { ...existing, ...k };
-    const payload: Partial<KomoditasDijual> = {
-      ...k,
-      standardized_stock_periode: calcStockPerDay(merged),
-    };
-    const updated = await updateKomoditasDijualApi(id, payload);
+    const updated = await updateKomoditasDijualApi(id, k);
     persist('komoditasDijual', setKomoditasDijual, prev => prev.map(x => x.id === id ? updated : x));
     return updated;
   }, [komoditasDijual, persist]);
+
+  const deleteKomoditasDijual = useCallback(async (id: string): Promise<void> => {
+    await deleteKomoditasDijualApi(id);
+    persist('komoditasDijual', setKomoditasDijual, prev => prev.filter(x => x.id !== id));
+  }, [persist]);
 
   const deleteKomoditasDijual = useCallback(async (id: string): Promise<void> => {
     await deleteKomoditasDijualApi(id);
@@ -822,9 +819,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       addKomoditas, createKomoditas, updateKomoditas, deleteKomoditas,
       addTempatUsaha, createTempatUsaha, updateTempatUsaha, deleteTempatUsaha,
       addKomoditasDijual, createKomoditasDijual, updateKomoditasDijual, deleteKomoditasDijual,
-      addHargaRutin, updateHargaRutin, deleteHargaRutin,
-      loadHargaRutinReportGroups, saveHargaRutinReport, deleteHargaRutinReport,
-      calculateHargaPelaporan,
+      addHargaRutin, updateHargaRutin, deleteHargaRutin, calculateHargaPelaporan,
       getKelasForTU, getKelasForKomoditasInPasar,
     }}>
       {children}
