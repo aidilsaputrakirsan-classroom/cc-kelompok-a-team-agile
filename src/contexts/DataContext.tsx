@@ -4,7 +4,7 @@
  * Komoditas Dijual, Harga Rutin, dan Harga Pelaporan.
  * Data disimpan di localStorage untuk persistensi prototype.
  */
-import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, useRef } from 'react';
 import type { Pasar, Komoditas, TempatUsaha, KomoditasDijual, HargaRutin, HargaPelaporan, KelasKomoditas, PeriodeUnit } from '@/types';
 import { calcStandardizedStockPerDay } from '@/types';
 import {
@@ -66,6 +66,9 @@ interface DataContextType {
   hargaRutin: HargaRutin[]; setHargaRutin: React.Dispatch<React.SetStateAction<HargaRutin[]>>;
   hargaPelaporan: HargaPelaporan[];
   addPasar: (p: Omit<Pasar, 'id'>) => void;
+  createPasar: (p: Omit<Pasar, 'id'>) => Promise<Pasar>;
+  updatePasar: (id: string, p: Partial<Pasar>) => Promise<Pasar>;
+  deletePasar: (id: string) => Promise<void>;
   createPasar: (p: Omit<Pasar, 'id'>) => Promise<Pasar>;
   updatePasar: (id: string, p: Partial<Pasar>) => Promise<Pasar>;
   deletePasar: (id: string) => Promise<void>;
@@ -299,6 +302,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [komoditasDijual, setKomoditasDijual] = useState<KomoditasDijual[]>(() => load('komoditasDijual', defaults.mockKomoditasDijual));
   const [hargaRutin, setHargaRutin] = useState<HargaRutin[]>(() => load('hargaRutin', defaults.mockHargaRutin));
 
+  const pasarRefreshInFlight = useRef<Promise<void> | null>(null);
+  const komoditasRefreshInFlight = useRef<Promise<void> | null>(null);
+
   const persist = useCallback(<T,>(key: string, setter: React.Dispatch<React.SetStateAction<T[]>>, updater: (prev: T[]) => T[]) => {
     setter(prev => {
       const next = updater(prev);
@@ -308,7 +314,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   /* ===== CRUD Pasar (via /v1/admin/pasar) ===== */
+  /* ===== CRUD Pasar (via /v1/admin/pasar) ===== */
   const addPasar = (p: Omit<Pasar, 'id'>) => persist('pasar', setPasar, prev => [...prev, { ...p, id: uid() }]);
+
 
   const refreshPasar = useCallback(async () => {
     if (!getAccessToken()) return;
