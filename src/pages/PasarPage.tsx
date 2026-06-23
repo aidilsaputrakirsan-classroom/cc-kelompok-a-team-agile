@@ -4,6 +4,7 @@
  * Mendukung pencarian, filter status, sorting, ekspor CSV, dan impor CSV.
  */
 import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useData } from "@/contexts/DataContext";
 import type { Pasar } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,6 +22,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogDescription,
   DialogHeader,
   DialogTitle,
@@ -73,6 +75,7 @@ const emptyPasar = {
 
 export default function PasarPage() {
   const { pasar, createPasar, updatePasar, deletePasar, refreshPasar } = useData();
+  const { pasar, createPasar, updatePasar, deletePasar, refreshPasar } = useData();
   const isMobile = useIsMobile();
 
   /* ===== State pencarian, filter, sorting ===== */
@@ -85,7 +88,21 @@ export default function PasarPage() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      setLoading(true);
+      await refreshPasar();
+      if (!cancelled) setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshPasar]);
 
   useEffect(() => {
     let cancelled = false;
@@ -170,12 +187,19 @@ export default function PasarPage() {
         await updatePasar(editing.id, form);
         toast.success("Pasar diperbarui");
       } else {
+    setSubmitting(true);
+    try {
+      if (editing) {
+        await updatePasar(editing.id, form);
+        toast.success("Pasar diperbarui");
+      } else {
         await createPasar(form);
         toast.success("Pasar ditambahkan");
       }
+      await refreshPasar();
       setDialogOpen(false);
-    } catch {
-      toast.error(editing ? "Gagal memperbarui pasar" : "Gagal menambahkan pasar");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal menyimpan pasar");
     } finally {
       setSubmitting(false);
     }
@@ -185,8 +209,8 @@ export default function PasarPage() {
     try {
       await deletePasar(id);
       toast.success("Pasar dinonaktifkan");
-    } catch {
-      toast.error("Gagal menghapus pasar");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal menghapus pasar");
     }
   };
 
@@ -230,9 +254,23 @@ export default function PasarPage() {
           } catch {
             // lewati baris yang gagal
           }
+          try {
+            await createPasar({
+              nama: r["Nama"].trim(),
+              alamat: r["Alamat"] || "",
+              longitude: parseFloat(r["Longitude"]) || 0,
+              latitude: parseFloat(r["Latitude"]) || 0,
+              is_active: r["Aktif"] === "0" ? 0 : 1,
+            });
+            count++;
+          } catch {
+            // lewati baris yang gagal
+          }
         }
       }
       toast.success(`${count} pasar diimpor`);
+      await refreshPasar();
+    } catch {
       await refreshPasar();
     } catch {
       toast.error("Gagal mengimpor CSV");
@@ -288,6 +326,11 @@ export default function PasarPage() {
                 <DialogTitle>
                   {editing ? "Edit Pasar" : "Tambah Pasar"}
                 </DialogTitle>
+                <DialogDescription>
+                  {editing
+                    ? "Perbarui informasi pasar yang sudah terdaftar."
+                    : "Isi formulir untuk menambahkan pasar baru."}
+                </DialogDescription>
                 <DialogDescription>
                   {editing
                     ? "Perbarui informasi pasar yang sudah terdaftar."
@@ -354,8 +397,10 @@ export default function PasarPage() {
                 <Button
                   type="submit"
                   disabled={submitting}
+                  disabled={submitting}
                   className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
                 >
+                  {submitting ? "Menyimpan..." : editing ? "Perbarui" : "Simpan"}
                   {submitting ? "Menyimpan..." : editing ? "Perbarui" : "Simpan"}
                 </Button>
               </form>
@@ -402,6 +447,11 @@ export default function PasarPage() {
           Memuat data pasar...
         </p>
       ) : isMobile ? (
+      {loading ? (
+        <p className="text-center text-muted-foreground py-8 text-sm">
+          Memuat data pasar...
+        </p>
+      ) : isMobile ? (
         /* --- Tampilan kartu untuk mobile --- */
         <div className="space-y-2">
           {filtered.map((p) => (
@@ -442,11 +492,13 @@ export default function PasarPage() {
                           <AlertDialogTitle>Hapus Pasar?</AlertDialogTitle>
                           <AlertDialogDescription>
                             Pasar "{p.nama}" akan dinonaktifkan.
+                            Pasar "{p.nama}" akan dinonaktifkan.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Batal</AlertDialogCancel>
                           <AlertDialogAction
+                            onClick={() => void handleDelete(p.id)}
                             onClick={() => void handleDelete(p.id)}
                           >
                             Hapus
@@ -535,11 +587,13 @@ export default function PasarPage() {
                           <AlertDialogTitle>Hapus Pasar?</AlertDialogTitle>
                           <AlertDialogDescription>
                             Pasar "{p.nama}" akan dinonaktifkan.
+                            Pasar "{p.nama}" akan dinonaktifkan.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Batal</AlertDialogCancel>
                           <AlertDialogAction
+                            onClick={() => void handleDelete(p.id)}
                             onClick={() => void handleDelete(p.id)}
                           >
                             Hapus

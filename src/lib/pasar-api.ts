@@ -1,84 +1,102 @@
+import { apiFetch, type ApiEnvelope } from '@/lib/api';
 import type { Pasar } from '@/types';
-import { apiFetch } from '@/lib/api';
 
-interface ResPasar {
+export interface ApiPasar {
   id: string;
   nama: string;
   alamat?: string | null;
+  longitude?: number;
+  latitude?: number;
   status: number;
 }
 
-interface ResPasarSingle {
-  data?: ResPasar;
-}
-
-interface ResPasarList {
-  data: ResPasar[];
-}
-
-export function mapResPasarToPasar(item: ResPasar): Pasar {
+export function mapPasarFromApi(item: ApiPasar): Pasar {
   return {
     id: item.id,
     nama: item.nama,
     alamat: item.alamat ?? '',
     is_active: item.status,
-    longitude: 0,
-    latitude: 0,
+    longitude: item.longitude ?? 0,
+    latitude: item.latitude ?? 0,
   };
 }
 
-function toCreatePayload(p: Omit<Pasar, 'id'>) {
-  return {
-    nama: p.nama,
-    alamat: p.alamat || undefined,
-  };
+async function parseApiError(res: Response, fallback: string): Promise<string> {
+  try {
+    const body = (await res.json()) as ApiEnvelope;
+    return body.message || fallback;
+  } catch {
+    return fallback;
+  }
 }
 
-function toUpdatePayload(p: Partial<Pasar>) {
+export async function fetchPasarList(params?: { name?: string; status?: number; limit?: number }): Promise<Pasar[]> {
+  const searchParams = new URLSearchParams();
+  if (params?.name) searchParams.set('name', params.name);
+  if (params?.status !== undefined) searchParams.set('status', String(params.status));
+  searchParams.set('limit', String(params?.limit ?? 1000));
+
+  const res = await apiFetch(`/v1/admin/pasar?${searchParams}`);
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, 'Gagal memuat data pasar'));
+  }
+
+  const body = (await res.json()) as ApiEnvelope<ApiPasar[]>;
+  const data = body.data ?? [];
+  return Array.isArray(data) ? data.map((item) => mapPasarFromApi(item)) : [];
+}
+
+export async function createPasarApi(data: Omit<Pasar, 'id'>): Promise<Pasar> {
+  const res = await apiFetch('/v1/admin/pasar', {
+    method: 'POST',
+    body: JSON.stringify({
+      nama: data.nama,
+      alamat: data.alamat || undefined,
+      longitude: data.longitude,
+      latitude: data.latitude,
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, 'Gagal menambah pasar'));
+  }
+
+  const body = (await res.json()) as ApiEnvelope<ApiPasar>;
+  if (!body.data) {
+    throw new Error('Respons server tidak valid');
+  }
+
+  return mapPasarFromApi(body.data);
+}
+
+export async function updatePasarApi(id: string, data: Partial<Pasar>): Promise<Pasar> {
   const payload: Record<string, unknown> = {};
-  if (p.nama !== undefined) payload.nama = p.nama;
-  if (p.alamat !== undefined) payload.alamat = p.alamat;
-  if (p.is_active !== undefined) payload.status = p.is_active;
-  return payload;
+  if (data.nama !== undefined) payload.nama = data.nama;
+  if (data.alamat !== undefined) payload.alamat = data.alamat;
+  if (data.is_active !== undefined) payload.status = data.is_active;
+  if (data.longitude !== undefined) payload.longitude = data.longitude;
+  if (data.latitude !== undefined) payload.latitude = data.latitude;
+
+  const res = await apiFetch(`/v1/admin/pasar/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, 'Gagal memperbarui pasar'));
+  }
+
+  const body = (await res.json()) as ApiEnvelope<ApiPasar>;
+  if (!body.data) {
+    throw new Error('Respons server tidak valid');
+  }
+
+  return mapPasarFromApi(body.data);
 }
 
-export const pasarApi = {
-  async list(params?: { name?: string; status?: number; limit?: number }): Promise<Pasar[]> {
-    const search = new URLSearchParams();
-    if (params?.name) search.set('name', params.name);
-    if (params?.status !== undefined) search.set('status', String(params.status));
-    search.set('limit', String(params?.limit ?? 500));
-
-    const query = search.toString();
-    const res = await apiFetch<ResPasarList>(`/v1/admin/pasar${query ? `?${query}` : ''}`);
-    return (res.data ?? []).map(mapResPasarToPasar);
-  },
-
-  async getById(id: string): Promise<Pasar> {
-    const res = await apiFetch<ResPasarSingle>(`/v1/admin/pasar/${id}`);
-    if (!res.data) throw new Error('Pasar tidak ditemukan');
-    return mapResPasarToPasar(res.data);
-  },
-
-  async create(p: Omit<Pasar, 'id'>): Promise<Pasar> {
-    const res = await apiFetch<ResPasarSingle>('/v1/admin/pasar', {
-      method: 'POST',
-      body: JSON.stringify(toCreatePayload(p)),
-    });
-    if (!res.data) throw new Error('Gagal membuat pasar');
-    return mapResPasarToPasar(res.data);
-  },
-
-  async update(id: string, p: Partial<Pasar>): Promise<Pasar> {
-    const res = await apiFetch<ResPasarSingle>(`/v1/admin/pasar/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(toUpdatePayload(p)),
-    });
-    if (!res.data) throw new Error('Gagal memperbarui pasar');
-    return mapResPasarToPasar(res.data);
-  },
-
-  async delete(id: string): Promise<void> {
-    await apiFetch(`/v1/admin/pasar/${id}`, { method: 'DELETE' });
-  },
-};
+export async function deletePasarApi(id: string): Promise<void> {
+  const res = await apiFetch(`/v1/admin/pasar/${id}`, { method: 'DELETE' });
+  if (!res.ok) {
+    throw new Error(await parseApiError(res, 'Gagal menghapus pasar'));
+  }
+}

@@ -1,48 +1,55 @@
 export function getApiBaseUrl(): string {
-  const configured = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim();
-  if (configured) return configured.replace(/\/$/, '');
-  if (import.meta.env.DEV) return '';
-  return 'http://127.0.0.1:8080';
+  return import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8080';
+}
+
+export function getAccessToken(): string | null {
+  return localStorage.getItem('access_token');
 }
 
 export function getAuthHeaders(extra?: HeadersInit): HeadersInit {
-  const token = localStorage.getItem('access_token');
-  return {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...extra,
+    ...(extra as Record<string, string>),
   };
+  const token = getAccessToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  return headers;
 }
 
-export class ApiError extends Error {
-  status: number;
-
-  constructor(status: number, message: string) {
-    super(message);
-    this.name = 'ApiError';
-    this.status = status;
+export async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
+  const headers = new Headers(init?.headers);
+  if (!headers.has('Content-Type') && init?.body) {
+    headers.set('Content-Type', 'application/json');
   }
+  const token = getAccessToken();
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+  return fetch(`${getApiBaseUrl()}${path}`, { ...init, headers });
 }
 
-export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${getApiBaseUrl()}${path}`, {
-    ...init,
-    headers: {
-      ...getAuthHeaders(),
-      ...(init?.headers ?? {}),
-    },
-  });
+export interface ApiEnvelope<T = unknown> {
+  success: boolean;
+  code: number;
+  message: string;
+  data?: T;
+}
 
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const message =
-      typeof body?.message === 'string'
-        ? body.message
-        : typeof body?.error === 'string'
-          ? body.error
-          : res.statusText;
-    throw new ApiError(res.status, message || 'Request failed');
-  }
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+}
 
-  return body as T;
+export interface AuthToken {
+  access_token: string;
+  expires_in: number;
+  token_type: string;
+}
+
+export interface LoginResponseData {
+  user: AuthUser;
+  token: AuthToken;
 }
