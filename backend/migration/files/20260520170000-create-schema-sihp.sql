@@ -1,0 +1,6 @@
+-- +migrate Up
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE SCHEMA IF NOT EXISTS "sihp";
+
+-- +migrate Down
+DROP SCHEMA IF EXISTS "sihp" CASCADE;
