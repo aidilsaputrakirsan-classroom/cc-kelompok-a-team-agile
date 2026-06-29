@@ -1,0 +1,5 @@
+﻿railway:
+  dialect: postgres
+  datasource: host=thomas.proxy.rlwy.net dbname=sihp user=postgres password=YFjwDRmVMWzsbqxjtMxYaqGncFmuEyoP sslmode=require port=27761
+  dir: files
+  table: migrations

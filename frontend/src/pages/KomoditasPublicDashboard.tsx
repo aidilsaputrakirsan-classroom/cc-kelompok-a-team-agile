@@ -1,0 +1,314 @@
+import { useMemo, useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useData } from "@/contexts/DataContext";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import {
+  ArrowLeft,
+  Minus,
+  Package,
+  Search,
+  Store,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
+import PublicNavbar from "@/components/PublicNavbar";
+
+const formatTanggal = (tanggal: string) => {
+  const date = new Date(tanggal);
+  if (Number.isNaN(date.getTime())) return tanggal;
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+};
+
+export default function KomoditasPublicDashboard() {
+  const { komoditas, pasar, hargaPelaporan, tempatUsaha, komoditasDijual } =
+    useData();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [selectedPasar, setSelectedPasar] = useState<string>("all");
+  const [query, setQuery] = useState("");
+
+  // Get filterTempatUsahaId from location state
+  const filterTempatUsahaId = (location.state as any)?.filterTempatUsahaId || null;
+  const filteredTempatUsaha = filterTempatUsahaId
+    ? tempatUsaha.find((t) => t.id === filterTempatUsahaId)
+    : null;
+
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+    navigate("/");
+  };
+
+  const filteredPelaporan = useMemo(() => {
+    let data = hargaPelaporan;
+
+    // Filter by pasar if selected
+    if (selectedPasar !== "all") {
+      data = data.filter((item) => item.pasar_id === selectedPasar);
+    }
+
+    // Filter by tempat usaha if coming from maps
+    if (filterTempatUsahaId && filteredTempatUsaha) {
+      // Get komoditas that are sold at this tempat usaha
+      const komoditasIds = new Set(
+        komoditasDijual
+          .filter(
+            (kd) =>
+              kd.tempat_usaha_id === filterTempatUsahaId && kd.is_active,
+          )
+          .map((kd) => kd.komoditas_id),
+      );
+      // Filter harga pelaporan to only include komoditas from this tempat usaha
+      data = data.filter((item) => komoditasIds.has(item.komoditas_id));
+      // Also filter by pasar where this tempat usaha is located
+      data = data.filter(
+        (item) => item.pasar_id === filteredTempatUsaha.pasar_id,
+      );
+    }
+
+    return data;
+  }, [
+    hargaPelaporan,
+    selectedPasar,
+    filterTempatUsahaId,
+    filteredTempatUsaha,
+    komoditasDijual,
+  ]);
+
+  const summaryCards = useMemo(() => {
+    return komoditas.map((k) => {
+      const entries = filteredPelaporan
+        .filter((h) => h.komoditas_id === k.id)
+        .sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+
+      const latest = entries[entries.length - 1];
+      const prev = entries[entries.length - 2];
+
+      let trend: "naik" | "turun" | "stabil" = "stabil";
+      let diff = 0;
+      let pct = 0;
+      if (latest && prev) {
+        diff = latest.harga_rata_rata - prev.harga_rata_rata;
+        pct =
+          prev.harga_rata_rata > 0 ? (diff / prev.harga_rata_rata) * 100 : 0;
+        trend = diff > 0 ? "naik" : diff < 0 ? "turun" : "stabil";
+      }
+
+      return { komoditas: k, latest, trend, diff, pct };
+    });
+  }, [komoditas, filteredPelaporan]);
+
+  const filteredCards = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+    return summaryCards.filter(({ komoditas: k }) => {
+      if (!normalized) return true;
+      return k.nama.toLowerCase().includes(normalized);
+    });
+  }, [summaryCards, query]);
+
+  const cardsWithData = filteredCards.filter((card) => card.latest);
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <PublicNavbar />
+
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleBack}
+          className="gap-1.5 interactive-smooth hover:-translate-y-0.5"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Kembali
+        </Button>
+
+        <div className="space-y-2">
+          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+            {filterTempatUsahaId ? "Detail Tempat Usaha" : "Ringkasan Publik"}
+          </p>
+          <h2 className="text-2xl sm:text-3xl font-display font-semibold">
+            {filterTempatUsahaId && filteredTempatUsaha
+              ? `Komoditas di ${filteredTempatUsaha.nama}`
+              : "Harga Komoditas per Pasar"}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {filterTempatUsahaId && filteredTempatUsaha
+              ? `Daftar komoditas yang dijual di ${filteredTempatUsaha.nama}.`
+              : "Jelajahi harga komoditas terbaru seperti tampilan dashboard admin, lengkap dengan filter pasar dan pencarian komoditas."}
+          </p>
+        </div>
+
+        <Card>
+          <CardContent
+            className={`p-4 ${
+              filterTempatUsahaId ? "grid grid-cols-1" : "grid grid-cols-1 sm:grid-cols-2"
+            } gap-3`}
+          >
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/70" />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Cari komoditas"
+                className="pl-10 h-10"
+              />
+            </div>
+            {!filterTempatUsahaId && (
+              <Select value={selectedPasar} onValueChange={setSelectedPasar}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Semua Pasar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Pasar</SelectItem>
+                  {pasar.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.nama}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-accent/20 text-accent flex items-center justify-center">
+                <Store className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xl font-semibold">
+                  {selectedPasar === "all" ? pasar.length : 1}
+                </p>
+                <p className="text-xs text-muted-foreground">Cakupan Pasar</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-primary/15 text-primary flex items-center justify-center">
+                <Package className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xl font-semibold">{cardsWithData.length}</p>
+                <p className="text-xs text-muted-foreground">
+                  Komoditas Terdeteksi
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-success/15 text-success flex items-center justify-center">
+                <Search className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xl font-semibold">{filteredCards.length}</p>
+                <p className="text-xs text-muted-foreground">Hasil Filter</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+          {filteredCards.map(({ komoditas: k, latest, trend, pct, diff }) => (
+            <Card
+              key={k.id}
+              onClick={() => navigate(`/public/komoditas/${k.id}`)}
+              className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer interactive-smooth"
+            >
+              <CardContent className="p-0">
+                <div className="aspect-[4/3] bg-muted/50 flex items-center justify-center overflow-hidden">
+                  {k.gambar ? (
+                    <img
+                      src={k.gambar}
+                      alt={k.nama}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Package className="h-10 w-10 text-muted-foreground/40" />
+                  )}
+                </div>
+                <div className="p-3 space-y-1.5">
+                  <h3 className="text-sm font-semibold leading-tight truncate">
+                    {k.nama}
+                  </h3>
+                  <div className="flex items-center gap-1">
+                    <p className="text-sm font-bold">
+                      {latest
+                        ? `Rp ${latest.harga_rata_rata.toLocaleString("id-ID")}`
+                        : "-"}
+                    </p>
+                    <span className="text-xs text-muted-foreground">
+                      / {k.satuan_dasar}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 flex-wrap">
+                    {trend === "naik" && (
+                      <TrendingUp className="h-3.5 w-3.5 text-danger" />
+                    )}
+                    {trend === "turun" && (
+                      <TrendingDown className="h-3.5 w-3.5 text-success" />
+                    )}
+                    {trend === "stabil" && (
+                      <Minus className="h-3.5 w-3.5 text-warning" />
+                    )}
+                    <span
+                      className={
+                        trend === "naik"
+                          ? "text-xs font-semibold text-danger"
+                          : trend === "turun"
+                            ? "text-xs font-semibold text-success"
+                            : "text-xs font-semibold text-warning"
+                      }
+                    >
+                      {trend === "stabil"
+                        ? "0,00%"
+                        : `${pct >= 0 ? "up" : "down"} ${Math.abs(pct).toFixed(2)}%`}
+                    </span>
+                    {diff !== 0 && (
+                      <span className="text-[10px] text-muted-foreground">
+                        (Rp {diff > 0 ? "+" : ""}
+                        {Math.round(diff).toLocaleString("id-ID")})
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    {latest
+                      ? `Update ${formatTanggal(latest.tanggal)}`
+                      : "Belum ada data"}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {filteredCards.length === 0 && (
+          <Card>
+            <CardContent className="py-10 text-center text-muted-foreground">
+              Tidak ada komoditas yang cocok dengan filter atau pencarian.
+            </CardContent>
+          </Card>
+        )}
+      </main>
+    </div>
+  );
+}
